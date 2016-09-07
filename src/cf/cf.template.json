@@ -1,0 +1,109 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "CloudFormation stack for Sheep C/D",
+
+  "Parameters": {
+    "ExecutorMemory": {
+      "Type": "Number",
+      "Description": "lambda memory used to run executors",
+      "Default": 256
+    },
+    "SNSTopicName": {
+      "Type": "String",
+      "Description": "name of the SNS topic used for this sheep stack",
+      "Default": "sheepcd"
+    },
+    "S3Root": {
+      "Type": "String",
+      "Description": "root of s3",
+      "Default": "sheepcd"
+    }
+  },
+
+  "Resources": {
+    "SNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": { "Ref": "SNSTopicName" }
+      }
+    },
+
+    "ExecutorRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [ "lambda.amazonaws.com" ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "s3access",
+            "PolicyDocument": {
+              "Version" : "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sns:Publish",
+                    "sns:Subscribe",
+                    "sns:Unsubscribe"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [
+                      "",
+                      [
+                        "arn:aws:sns:",
+                        { "Ref" : "AWS::Region" },
+                        "::",
+                        { "Ref": "SNSTopicName" }
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        { "Ref": "S3Root" },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "S3Bucket": {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "BucketName": { "Ref": "S3Root" },
+      },
+      "DeletionPolicy" : "Retain"
+    }
+  },
+
+  "Outputs": {
+  }
+}
