@@ -58,17 +58,7 @@
                     "sns:Subscribe",
                     "sns:Unsubscribe"
                   ],
-                  "Resource": {
-                    "Fn::Join" : [
-                      "",
-                      [
-                        "arn:aws:sns:",
-                        { "Ref" : "AWS::Region" },
-                        "::",
-                        { "Ref": "SNSTopicName" }
-                      ]
-                    ]
-                  }
+                  "Resource": { "Ref": "SNSTopic" }
                 },
                 {
                   "Effect": "Allow",
