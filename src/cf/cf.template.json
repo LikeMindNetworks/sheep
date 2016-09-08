@@ -11,8 +11,13 @@
     },
     "SNSTopicName": {
       "Type": "String",
-      "Description": "name of the SNS topic used for this sheep stack",
+      "Description": "SNS topic used for internal communication",
       "Default": "sheepcd"
+    },
+    "GithubSNSTopicName": {
+      "Type": "String",
+      "Description": "github should trigger this SNS topic",
+      "Default": "sheepcdgithub"
     },
     "S3Root": {
       "Type": "String",
@@ -26,6 +31,13 @@
       "Type": "AWS::SNS::Topic",
       "Properties": {
         "DisplayName": { "Ref": "SNSTopicName" }
+      }
+    },
+
+    "GithubSNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": { "Ref": "GithubSNSTopicName" }
       }
     },
 
@@ -59,6 +71,15 @@
                     "sns:Unsubscribe"
                   ],
                   "Resource": { "Ref": "SNSTopic" }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sns:Publish",
+                    "sns:Subscribe",
+                    "sns:Unsubscribe"
+                  ],
+                  "Resource": { "Ref": "GithubSNSTopic" }
                 },
                 {
                   "Effect": "Allow",
