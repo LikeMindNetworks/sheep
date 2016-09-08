@@ -89,7 +89,7 @@
                     "s3:PutObject"
                   ],
                   "Resource": {
-                    "Fn::Join" : [
+                    "Fn::Join": [
                       "",
                       [
                         "arn:aws:s3:::",
@@ -117,7 +117,17 @@
 
   "Outputs": {
     "LambdaExecutorRole": {
-      "Value": { "Ref": "ExecutorRole" }
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "arn:aws:iam::",
+            { "Ref": "AWS::AccountId" },
+            ":role/",
+            { "Ref": "ExecutorRole" }
+          ]
+        ]
+      }
     }
   }
 }

@@ -1,0 +1,5 @@
+{
+	"name": "sheepcd",
+	"runtime": "nodejs4.3",
+	"memory": 256
+}

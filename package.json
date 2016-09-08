@@ -5,7 +5,7 @@
     "node": ">=4.3.2"
   },
   "description": "lambda based c/d",
-  "main": "index.js",
+  "main": "gulpfile.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha --recursive ./test",
     "cover": "./node_modules/.bin/istanbul cover _mocha -- --recursive ./test"
@@ -15,6 +15,11 @@
     "aws-sdk": "^2.5.5"
   },
   "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-prompt": "^0.2.0",
+    "gulp-rimraf": "^0.2.0",
+    "gulp-run-sequence": "^0.3.2",
+    "gulp-transform": "^1.0.8",
     "istanbul": "^1.1.0-alpha.1",
     "mocha": "^3.0.0"
   }
