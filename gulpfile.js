@@ -5,7 +5,8 @@ const
 	prompt = require('gulp-prompt'),
 	transform = require('gulp-transform'),
 	rm = require('gulp-rimraf'),
-	runSequence = require('gulp-run-sequence');
+	runSequence = require('gulp-run-sequence'),
+	fs = require('fs');
 
 gulp.task('clean', function() {
 	return gulp.src('./build/*').pipe(rm());
@@ -27,8 +28,16 @@ gulp.task(
 	'transform',
 	['copy-project-json', 'copy-functions'],
 	function() {
+		var cache;
+
+		try {
+			cache = require('./cache.json');
+		} catch(ex) {
+			cache = {};
+		}
+
 		var
-			executorRole,
+			executorRole = cache.executorRole,
 			mem = require('./project.json').memory;
 
 		return gulp
@@ -38,10 +47,11 @@ gulp.task(
 					{
 						type: 'input',
 						name: 'executorRole',
-						message: 'AWS Role for lambda execution (arn): '
+						message: 'AWS Role for lambda execution (arn): ',
+						default: executorRole
 					},
 					function(result) {
-						executorRole = result.executorRole;
+						cache.executorRole = executorRole = result.executorRole;
 					}
 				)
 			)
@@ -64,6 +74,8 @@ gulp.task(
 
 					fnJson.role = executorRole;
 					fnJson.memory = mem;
+
+					fs.writeFileSync('./cache.json', JSON.stringify(cache));
 
 					return JSON.stringify(fnJson);
 				}

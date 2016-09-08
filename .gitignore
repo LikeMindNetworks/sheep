@@ -6,4 +6,4 @@ node_modules/
 coverage/
 build/
 
-scratch.js
+cache.json

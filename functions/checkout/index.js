@@ -2,7 +2,7 @@
 
 exports.handle = function(event, context, callback) {
 
-	console.log(event);
+	console.log(JSON.stringify(event.Sns));
 	callback(null, 'abcdedf');
 
 };
