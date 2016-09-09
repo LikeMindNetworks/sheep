@@ -28,7 +28,7 @@ exports.handle = function(event, context, callback) {
 		},
 		(err, res) => {
 			if (err) {
-				callback(err);
+				callback(err, err.message);
 			} else {
 				console.log(res);
 
