@@ -84,6 +84,24 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "s3:GetBucketLocation",
+                    "s3:ListAllMyBuckets"
+                  ],
+                  "Resource": "arn:aws:s3:::*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [ "s3:ListBucket" ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [ "arn:aws:s3:::", { "Ref": "S3Root" } ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "s3:*"
                   ],
                   "Resource": {
