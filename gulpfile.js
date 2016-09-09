@@ -113,7 +113,7 @@ gulp.task('install-deps', function() {
 		));
 });
 
-gulp.task('github-access-token', function() {
+gulp.task('checkout-config', function() {
 	return gulp
 		.src('./build/functions/checkout/function.json')
 		.pipe(
@@ -127,12 +127,24 @@ gulp.task('github-access-token', function() {
 				(result) => cache.accessToken = result.accessToken
 			)
 		)
+		.pipe(
+			prompt.prompt(
+				{
+					type: 'input',
+					name: 's3root',
+					message: 's3root created by the cloudformation script:',
+					default: cache.s3root
+				},
+				(result) => cache.s3root = result.s3root
+			)
+		)
 		.pipe(transform(
 			(contents) => {
 				let fnJson = JSON.parse(contents.toString());
 
 				fnJson.environment = fnJson.environment || {};
 				fnJson.environment.GITHUB_ACCESS_TOKEN = cache.accessToken;
+				fnJson.environment.S3_ROOT = cache.s3root;
 
 				return JSON.stringify(fnJson, ' ', 2);
 			}
@@ -147,7 +159,7 @@ gulp.task('save-config-cache', function() {
 gulp.task('default', function() {
 	runSequence(
 		'clean',
-		'transform-config', 'github-access-token',
+		'transform-config', 'checkout-config',
 		'install-deps',
 		'save-config-cache'
 	);

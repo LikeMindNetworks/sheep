@@ -6,6 +6,7 @@ const
 	os = require('os'),
 	path = require('path'),
 	tar = require('tar-fs'),
+	s3 = require('s3'),
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
@@ -47,7 +48,30 @@ exports.handle = function(event, context, callback) {
 						.pipe(gunzip())
 						.pipe(tar.extract(cwd))
 						.on('finish', function() {
-							callback(null, cwd);
+							const
+								dirname = gitEvent.repository.full_name.replace(
+									/\//g, '-'
+								) + '-' + gitEvent.after.substring(0, 7),
+								s3cli = s3.createClient({
+									s3Client: new AWS.S3({})
+								}),
+								uploader = s3cli.uploadDir({
+									localFile: path.join(cwd, dirname),
+									deleteRemoved: true,
+
+									s3Params: {
+										Bucket: process.env.S3_ROOT,
+										Prefix: dirname
+									}
+								});
+
+							uploader.on('error', (err) => {
+								callback(err, err.message);
+							});
+
+							uploader.on('end', () => {
+								callback(null, path.join(process.env.S3_ROOT, dirname));
+							});
 						});
 				} else {
 					callback(
