@@ -5,36 +5,63 @@ const
 	fs = require('fs'),
 	os = require('os'),
 	path = require('path'),
-	GitHubApi = require('github'),
+	tar = require('tar-fs'),
+	gunzip = require('gunzip-maybe'),
+	https = require('follow-redirects').https,
 
-	github = new GitHubApi(),
-	ARTI_PATH_PREFEX = 'sheep-artifects';
+	ARTI_PATH_PREFEX = 'sheep-artifects-';
 
 exports.handle = function(event, context, callback) {
 
 	const
 		gitEvent = JSON.parse(event.Records[0].Sns.Message),
-		cwd = fs.mkdirSync(path.join(os.tmpdir(), ARTI_PATH_PREFEX));
+		cwd = path.join(os.tmpdir(), ARTI_PATH_PREFEX + Date.now());
 
-	github.authenticate({
-		type: 'oauth',
-		token: process.env.GITHUB_ACCESS_TOKEN
-	});
-
-	github.repos.getArchiveLink(
+	let req = https.request(
 		{
-			user: '',
-			repo: ''
-		},
-		(err, res) => {
-			if (err) {
-				callback(err, err.message);
-			} else {
-				console.log(res);
-
-				callback(null, '');
+			method: 'GET',
+			hostname: 'api.github.com',
+			path: '/repos/' + gitEvent.repository.full_name + '/tarball',
+			headers: {
+				'User-Agent': 'curl/7.50.0',
+				Authorization: 'token ' + process.env.GITHUB_ACCESS_TOKEN
 			}
+		},
+		(res) => {
+			res.on('error', (err) => {
+				callback(err, err.message);
+			});
+
+			fs.mkdirSync(cwd);
+
+			const
+				foutPath = path.join(cwd, 'archive.tar.gz'),
+				fout = fs.createWriteStream(foutPath);
+
+			res.pipe(fout);
+
+			fout.on('finish', () => {
+				if (res.statusCode === 200) {
+					fs
+						.createReadStream(foutPath)
+						.pipe(gunzip())
+						.pipe(tar.extract(cwd))
+						.on('finish', function() {
+							callback(null, cwd);
+						});
+				} else {
+					callback(
+						res.statusCode + ' '+ res.statusMessage,
+						fs.readFileSync(foutPath).toString()
+					);
+				}
+			});
 		}
 	);
+
+	req.end();
+	req.on('error', (err) => {
+		callback(err, err.message);
+	});
 
 };
