@@ -51,12 +51,12 @@ exports.handle = function(event, context, callback) {
 							const
 								dirname = gitEvent.repository.full_name.replace(
 									/\//g, '-'
-								) + '-' + gitEvent.after.substring(0, 7),
+								) + '-' + gitEvent.after.substring(0, 7) + '/',
 								s3cli = s3.createClient({
 									s3Client: new AWS.S3({})
 								}),
 								uploader = s3cli.uploadDir({
-									localFile: path.join(cwd, dirname),
+									localDir: path.join(cwd, dirname),
 									deleteRemoved: true,
 
 									s3Params: {
