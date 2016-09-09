@@ -5,21 +5,20 @@ const
 	fs = require('fs'),
 	childProcess = require('child_process'),
 
-	ARTI_PATH = './artifects';
+	ARTI_PATH_PREFEX = './sheep-artifects';
 
 exports.handle = function(event, context, callback) {
 
-	const gitEvent = JSON.parse(event.Records[0].Sns.Message);
-
-	// create cwd
-	fs.mkdirSync(ARTI_PATH);
+	const
+		gitEvent = JSON.parse(event.Records[0].Sns.Message),
+		cwd = fs.mkdtempSync(ARTI_PATH_PREFEX);
 
 	childProcess.exec(
 		"ssh-agent bash -c 'ssh-add ./deployKey; git clone "
 			+ gitEvent.repository.ssh_url
 			+ "'",
 		{
-			cwd: ARTI_PATH
+			cwd: cwd
 		},
 		(err, stdout, stderr) => {
 			console.log(err);
