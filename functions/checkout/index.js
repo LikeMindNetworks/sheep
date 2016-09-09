@@ -5,8 +5,9 @@ const
 	fs = require('fs'),
 	os = require('os'),
 	path = require('path'),
-	github = require('github'),
+	GitHubApi = require('github'),
 
+	github = new GitHubApi(),
 	ARTI_PATH_PREFEX = 'sheep-artifects';
 
 exports.handle = function(event, context, callback) {
