@@ -59,33 +59,7 @@
         "Path": "/",
         "Policies": [
           {
-            "PolicyName": "logging",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                      "logs:CreateLogGroup",
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"
-                  ],
-                  "Resource": {
-                    "Fn::Join": [
-                      "",
-                      [
-                        "arn:aws:logs:",
-                        { "Ref": "AWS::Region" },
-                        ":*:*"
-                      ]
-                    ]
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "PolicyName": "s3access",
+            "PolicyName": "access",
             "PolicyDocument": {
               "Version" : "2012-10-17",
               "Statement": [
@@ -121,6 +95,24 @@
                         "arn:aws:s3:::",
                         { "Ref": "S3Root" },
                         "/*"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                      "logs:CreateLogGroup",
+                      "logs:CreateLogStream",
+                      "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:logs:",
+                        { "Ref": "AWS::Region" },
+                        ":*:*"
                       ]
                     ]
                   }
