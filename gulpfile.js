@@ -7,7 +7,9 @@ const
 	rename = require('gulp-rename'),
 	rm = require('gulp-rimraf'),
 	runSequence = require('gulp-run-sequence'),
-	fs = require('fs');
+	fs = require('fs'),
+	path = require('path'),
+	childProcess = require('child_process');
 
 var cache;
 
@@ -83,24 +85,58 @@ gulp.task(
 	}
 );
 
-gulp.task('copy-deploy-key', function() {
+gulp.task('install-deps', function() {
 	return gulp
-		.src('./package.json')
+		.src('./build/**/function.json')
+		.pipe(transform(
+			(contents, file) => {
+				const
+					fnJson = JSON.parse(contents.toString()),
+					fnPath = path.join(
+						'./build',
+						file.relative.substring(
+							0, file.relative.lastIndexOf('/')
+						)
+					);
+
+				if (fnJson.dependencies && fnJson.dependencies.length) {
+					childProcess.execSync(
+						'npm install --prefix='
+							+ fnPath
+							+ ' '
+							+ fnJson.dependencies.join(' ')
+					);
+				}
+
+				return contents;
+			}
+		));
+});
+
+gulp.task('github-access-token', function() {
+	return gulp
+		.src('./build/functions/checkout/function.json')
 		.pipe(
 			prompt.prompt(
 				{
 					type: 'input',
-					name: 'deployKeyPath',
-					message: 'Path to deploy key:',
-					default: cache.deployKeyPath
+					name: 'accessToken',
+					message: 'github access token:',
+					default: cache.accessToken
 				},
-				(result) => cache.deployKeyPath = result.deployKeyPath
+				(result) => cache.accessToken = result.accessToken
 			)
 		)
 		.pipe(transform(
-			(contents, file) => fs.readFileSync(cache.deployKeyPath)
+			(contents) => {
+				let fnJson = JSON.parse(contents.toString());
+
+				fnJson.environment = fnJson.environment || {};
+				fnJson.environment.GITHUB_ACCESS_TOKEN = cache.accessToken;
+
+				return JSON.stringify(fnJson, ' ', 2);
+			}
 		))
-		.pipe(rename('deployKey'))
 		.pipe(gulp.dest('./build/functions/checkout'));
 });
 
@@ -111,7 +147,8 @@ gulp.task('save-config-cache', function() {
 gulp.task('default', function() {
 	runSequence(
 		'clean',
-		'transform-config', 'copy-deploy-key',
+		'transform-config', 'github-access-token',
+		'install-deps',
 		'save-config-cache'
 	);
 });
