@@ -10,7 +10,8 @@ const
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
-	ARTI_PATH_PREFEX = 'sheep-artifects-';
+	ARTI_PATH_PREFEX = 'sheep-artifects-',
+	S3_SRC_PATH_PREFEX = 'src';
 
 exports.handle = function(event, context, callback) {
 
@@ -49,6 +50,9 @@ exports.handle = function(event, context, callback) {
 						.pipe(tar.extract(cwd))
 						.on('finish', function() {
 							const
+								timestamp = new Date(
+									gitEvent.head_commit.timestamp
+								).getTime() + '',
 								dirname = gitEvent.repository.full_name.replace(
 									/\//g, '-'
 								) + '-' + gitEvent.after.substring(0, 7) + '/',
@@ -61,7 +65,11 @@ exports.handle = function(event, context, callback) {
 
 									s3Params: {
 										Bucket: process.env.S3_ROOT,
-										Prefix: dirname
+										Prefix: [
+											S3_SRC_PATH_PREFEX,
+											gitEvent.repository.full_name,
+											timestamp + '-' + gitEvent.after
+										]
 									}
 								});
 
