@@ -8,21 +8,6 @@
       "Type": "Number",
       "Description": "lambda memory used to run executors",
       "Default": 256
-    },
-    "SNSTopicName": {
-      "Type": "String",
-      "Description": "SNS topic used for internal communication",
-      "Default": "sheepcd"
-    },
-    "GithubSNSTopicName": {
-      "Type": "String",
-      "Description": "github should trigger this SNS topic",
-      "Default": "sheepcdgithub"
-    },
-    "S3Root": {
-      "Type": "String",
-      "Description": "root of s3",
-      "Default": "sheepcd"
     }
   },
 
@@ -30,15 +15,35 @@
     "SNSTopic": {
       "Type": "AWS::SNS::Topic",
       "Properties": {
-        "DisplayName": { "Ref": "SNSTopicName" }
+        "DisplayName": {
+          "Fn::Join": [
+            "-", [ "sheepcd", "sns", { "Ref": "AWS::StackName" } ]
+          ]
+        }
       }
     },
 
     "GithubSNSTopic": {
       "Type": "AWS::SNS::Topic",
       "Properties": {
-        "DisplayName": { "Ref": "GithubSNSTopicName" }
+        "DisplayName": {
+          "Fn::Join": [
+            "-", [ "sheepcd", "sns", "github", { "Ref": "AWS::StackName" } ]
+          ]
+        }
       }
+    },
+
+    "S3Bucket": {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "BucketName": {
+          "Fn::Join": [
+            "-", [ "sheepcd", "s3root", { "Ref": "AWS::StackName" } ]
+          ]
+        },
+      },
+      "DeletionPolicy" : "Retain"
     },
 
     "ExecutorRole": {
@@ -94,8 +99,13 @@
                   "Action": [ "s3:ListBucket" ],
                   "Resource": {
                     "Fn::Join": [
-                      "",
-                      [ "arn:aws:s3:::", { "Ref": "S3Root" } ]
+                      "-",
+                      [
+                        "arn:aws:s3:::",
+                        "sheepcd",
+                        "s3root",
+                        { "Ref": "AWS::StackName" }
+                      ]
                     ]
                   }
                 },
@@ -106,10 +116,12 @@
                   ],
                   "Resource": {
                     "Fn::Join": [
-                      "",
+                      "-",
                       [
                         "arn:aws:s3:::",
-                        { "Ref": "S3Root" },
+                        "sheepcd",
+                        "s3root",
+                        { "Ref": "AWS::StackName" },
                         "/*"
                       ]
                     ]
@@ -138,14 +150,6 @@
           }
         ]
       }
-    },
-
-    "S3Bucket": {
-      "Type" : "AWS::S3::Bucket",
-      "Properties" : {
-        "BucketName": { "Ref": "S3Root" },
-      },
-      "DeletionPolicy" : "Retain"
     }
   },
 
@@ -164,4 +168,5 @@
       }
     }
   }
+
 }
