@@ -101,8 +101,7 @@
                     "Fn::Join": [
                       "-",
                       [
-                        "arn:aws:s3:::",
-                        "sheepcd",
+                        "arn:aws:s3:::sheepcd",
                         "s3root",
                         { "Ref": "AWS::StackName" }
                       ]
@@ -118,7 +117,7 @@
                     "Fn::Join": [
                       "-",
                       [
-                        "arn:aws:s3:::",
+                        "arn:aws:s3:::sheepcd",
                         "sheepcd",
                         "s3root",
                         { "Ref": "AWS::StackName" },
