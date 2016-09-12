@@ -69,7 +69,7 @@ exports.handle = function(event, context, callback) {
 											S3_SRC_PATH_PREFEX,
 											gitEvent.repository.full_name,
 											timestamp + '-' + gitEvent.after
-										]
+										].join('/')
 									}
 								});
 
