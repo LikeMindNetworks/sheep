@@ -99,10 +99,9 @@
                   "Action": [ "s3:ListBucket" ],
                   "Resource": {
                     "Fn::Join": [
-                      "-",
+                      "",
                       [
-                        "arn:aws:s3:::sheepcd",
-                        "s3root",
+                        "arn:aws:s3:::sheepcd-s3root-",
                         { "Ref": "AWS::StackName" }
                       ]
                     ]
@@ -115,11 +114,9 @@
                   ],
                   "Resource": {
                     "Fn::Join": [
-                      "-",
+                      "",
                       [
-                        "arn:aws:s3:::sheepcd",
-                        "sheepcd",
-                        "s3root",
+                        "arn:aws:s3:::sheepcd-s3root-",
                         { "Ref": "AWS::StackName" },
                         "/*"
                       ]
