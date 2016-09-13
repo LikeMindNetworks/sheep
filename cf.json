@@ -3,13 +3,7 @@
 
   "Description": "CloudFormation stack for Sheep C/D",
 
-  "Parameters": {
-    "ExecutorMemory": {
-      "Type": "Number",
-      "Description": "lambda memory used to run executors",
-      "Default": 256
-    }
-  },
+  "Parameters": {},
 
   "Resources": {
     "SNSTopic": {
@@ -44,6 +38,41 @@
         },
       },
       "DeletionPolicy" : "Retain"
+    },
+
+    "ConfigTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": {
+          "Fn::Join": [
+            "-", [ "sheepcd", "ddb", { "Ref": "AWS::StackName" } ]
+          ]
+        },
+        "KeySchema": [
+          {
+            "AttributeName": "pipeline",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "config",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        },
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pipeline",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "config",
+            "AttributeType": "S"
+          }
+        ]
+      }
     },
 
     "ExecutorRole": {
@@ -137,6 +166,34 @@
                         "arn:aws:logs:",
                         { "Ref": "AWS::Region" },
                         ":*:*"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:BatchWriteItem"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "", [
+                        "arn:aws:dynamodb:",
+                        { "Ref": "AWS::Region" },
+                        "::table/",
+                        {
+                          "Fn::Join": [
+                            "-", [
+                              "sheepcd", "ddb", { "Ref": "AWS::StackName" }
+                            ]
+                          ]
+                        }
                       ]
                     ]
                   }

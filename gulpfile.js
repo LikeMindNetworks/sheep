@@ -89,6 +89,9 @@ gulp.task(
 					fnJson.role = cache.executorRole;
 					fnJson.memory = mem;
 
+					fnJson.environment = fnJson.environment || {};
+					fnJson.environment.STACK_NAME = cache.stackName;
+
 					return JSON.stringify(fnJson, ' ', 2);
 				}
 			))
