@@ -36,7 +36,8 @@ exports.handle = function(event, context, callback) {
 							snsEvent.repo,
 							snsEvent.pipeline,
 							stageName,
-							snsEvent.commit
+							snsEvent.commit,
+							snsEvent.timestamp
 						),
 						'config'
 					].join('/'),
