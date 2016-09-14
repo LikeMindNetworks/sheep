@@ -10,7 +10,7 @@ const
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
-	pathUtil = require('./lib/utils/util'),
+	pathUtil = require('./lib/utils/path-util'),
 	getPipelinesForRepo = require('./lib/view/get-pipelines-for-repo'),
 
 	ARTI_PATH_PREFEX = 'sheep-artifects-';

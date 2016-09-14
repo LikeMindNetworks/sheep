@@ -3,7 +3,7 @@
 const
 	AWS = require('aws-sdk'),
 
-	pathUtil = require('./lib/utils/util'),
+	pathUtil = require('./lib/utils/path-util'),
 	getPipeline = require('./lib/view/get-pipeline');
 
 exports.handle = function(event, context, callback) {
