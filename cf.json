@@ -186,7 +186,7 @@
                       "", [
                         "arn:aws:dynamodb:",
                         { "Ref": "AWS::Region" },
-                        "::table/",
+                        ":*:table/",
                         {
                           "Fn::Join": [
                             "-", [
