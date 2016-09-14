@@ -44,7 +44,8 @@ exports.handle = function(event, context, callback) {
 					Body: JSON.stringify({
 						event: snsEvent,
 						stage: stage
-					})
+					}),
+					ContentType: 'application/json'
 				},
 				(err, data) => {
 					// call executor lambda synchronously
