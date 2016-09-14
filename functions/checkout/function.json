@@ -5,5 +5,5 @@
   "dependencies": [
     "follow-redirects", "tar-fs", "gunzip-maybe", "s3"
   ],
-  "lib": [ "view" ]
+  "lib": [ "view", "utils" ]
 }

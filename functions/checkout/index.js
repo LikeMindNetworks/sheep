@@ -10,10 +10,10 @@ const
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
+	pathUtil = require('./lib/utils/util'),
 	getPipelinesForRepo = require('./lib/view/get-pipelines-for-repo'),
 
-	ARTI_PATH_PREFEX = 'sheep-artifects-',
-	S3_SRC_PATH_PREFEX = 'src';
+	ARTI_PATH_PREFEX = 'sheep-artifects-';
 
 exports.handle = function(event, context, callback) {
 
@@ -61,11 +61,11 @@ exports.handle = function(event, context, callback) {
 								s3cli = s3.createClient({
 									s3Client: new AWS.S3({})
 								}),
-								s3Path = [
-									S3_SRC_PATH_PREFEX,
+								s3Path = pathUtil.getSourcePath(
 									gitEvent.repository.full_name,
-									timestamp + '-' + gitEvent.after
-								].join('/'),
+									gitEvent.after,
+									timestamp
+								),
 								uploader = s3cli.uploadDir({
 									localDir: path.join(cwd, dirname),
 									deleteRemoved: true,
