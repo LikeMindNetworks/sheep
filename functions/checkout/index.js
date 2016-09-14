@@ -10,6 +10,8 @@ const
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
+	getPipelinesForRepo = require('./lib/view/get-pipelines-for-repo'),
+
 	ARTI_PATH_PREFEX = 'sheep-artifects-',
 	S3_SRC_PATH_PREFEX = 'src';
 
@@ -59,17 +61,18 @@ exports.handle = function(event, context, callback) {
 								s3cli = s3.createClient({
 									s3Client: new AWS.S3({})
 								}),
+								s3Path = [
+									S3_SRC_PATH_PREFEX,
+									gitEvent.repository.full_name,
+									timestamp + '-' + gitEvent.after
+								].join('/'),
 								uploader = s3cli.uploadDir({
 									localDir: path.join(cwd, dirname),
 									deleteRemoved: true,
 
 									s3Params: {
 										Bucket: process.env.S3_ROOT,
-										Prefix: [
-											S3_SRC_PATH_PREFEX,
-											gitEvent.repository.full_name,
-											timestamp + '-' + gitEvent.after
-										].join('/')
+										Prefix: s3Path
 									}
 								});
 
@@ -78,7 +81,50 @@ exports.handle = function(event, context, callback) {
 							});
 
 							uploader.on('end', () => {
-								callback(null, path.join(process.env.S3_ROOT, dirname));
+								getPipelinesForRepo(
+									AWS,
+									{
+										stackName: process.env.STACK_NAME
+									},
+									gitEvent.repository.full_name
+								)
+								.then((pipelines) => {
+									let
+										sns = new AWS.SNS(),
+										cnt = pipelines.length;
+
+									if (!cnt) {
+										callback(
+											null, path.join(process.env.S3_ROOT, dirname)
+										);
+									}
+
+									// send sns notification
+									pipelines.map((pipeline) => {
+										sns.publish(
+											{
+												TopicArn: process.env.SNS_TOPIC,
+												Message: JSON.stringify({
+													pipeline: pipeline,
+													timestamp: timestamp,
+													commit: gitEvent.after,
+													repo: gitEvent.repository.full_name,
+													s3Path: s3Path
+												})
+											},
+											(err, data) => {
+												if (err) {
+													cnt = 0;
+												}
+
+												if (--cnt <= 0) {
+													callback(err, s3Path);
+												}
+											}
+										);
+									});
+								})
+								.catch(callback);
 							});
 						});
 				} else {

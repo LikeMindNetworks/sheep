@@ -82,6 +82,19 @@ gulp.task(
 					}
 				)
 			)
+			.pipe(
+				prompt.prompt(
+					{
+						type: 'input',
+						name: 'snsTopic',
+						message: 'Sheep C/D SNS topic arn',
+						default: cache.snsTopic
+					},
+					(result) => {
+						cache.snsTopic = result.snsTopic;
+					}
+				)
+			)
 			.pipe(transform(
 				(contents) => {
 					let fnJson = JSON.parse(contents.toString());
@@ -91,6 +104,7 @@ gulp.task(
 
 					fnJson.environment = fnJson.environment || {};
 					fnJson.environment.STACK_NAME = cache.stackName;
+					fnJson.environment.SNS_TOPIC = cache.snsTopic;
 
 					return JSON.stringify(fnJson, ' ', 2);
 				}
