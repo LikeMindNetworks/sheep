@@ -105,6 +105,7 @@ gulp.task(
 					fnJson.environment = fnJson.environment || {};
 					fnJson.environment.STACK_NAME = cache.stackName;
 					fnJson.environment.SNS_TOPIC = cache.snsTopic;
+					fnJson.environment.S3_ROOT = 'sheepcd-s3root-' + cache.stackName;
 
 					return JSON.stringify(fnJson, ' ', 2);
 				}
@@ -205,7 +206,6 @@ gulp.task('checkout-config', function() {
 
 				fnJson.environment = fnJson.environment || {};
 				fnJson.environment.GITHUB_ACCESS_TOKEN = cache.accessToken;
-				fnJson.environment.S3_ROOT = 'sheepcd-s3root-' + cache.stackName;
 
 				return JSON.stringify(fnJson, ' ', 2);
 			}
