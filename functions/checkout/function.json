@@ -4,5 +4,8 @@
   "role": "arn:aws:iam::293503197324:role/placeholder",
   "dependencies": [
     "follow-redirects", "tar-fs", "gunzip-maybe", "s3"
+  ],
+  "lib": [
+    "manage-stage"
   ]
 }

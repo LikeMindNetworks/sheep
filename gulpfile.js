@@ -116,22 +116,54 @@ gulp.task('install-deps', function() {
 				if (fnJson.dependencies && fnJson.dependencies.length) {
 					const installed = fs.readdirSync('./node_modules/');
 
+					childProcess.execSync(
+						'mkdir -p ' + fnPath + '/node_modules/'
+					);
+
 					fnJson.dependencies.map((dep) => {
 						let idx = installed.indexOf(dep);
 
 						if (idx >= 0) {
 							childProcess.execSync(
-								'mkdir -p ' + fnPath + '/node_modules/'
-							);
-
-							childProcess.execSync(
 								'cp -r ./node_modules/' + dep + ' '
 									+ fnPath + '/node_modules/' + dep
-							)
+							);
 						} else {
 							throw new Error('Module not found: ' + dep);
 						}
 					})
+				}
+
+				return contents;
+			}
+		));
+});
+
+gulp.task('install-lib', function() {
+	return gulp
+		.src('./build/**/function.json')
+		.pipe(transform(
+			(contents, file) => {
+				const
+					fnJson = JSON.parse(contents.toString()),
+					fnPath = path.join(
+						'./build',
+						file.relative.substring(
+							0, file.relative.lastIndexOf('/')
+						)
+					);
+
+				if (fnJson.lib && fnJson.lib.length) {
+					childProcess.execSync(
+						'mkdir -p ' + fnPath + '/lib/'
+					);
+
+					fnJson.lib.map((dep) => {
+						childProcess.execSync(
+							'cp -r ./lib/' + dep + ' '
+								+ fnPath + '/lib/' + dep
+						);
+					});
 				}
 
 				return contents;
@@ -175,7 +207,7 @@ gulp.task('default', function() {
 	runSequence(
 		'clean',
 		'transform-config', 'checkout-config',
-		'install-deps',
+		'install-deps', 'install-lib',
 		'save-config-cache'
 	);
 });
