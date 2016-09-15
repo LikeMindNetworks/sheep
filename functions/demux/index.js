@@ -41,7 +41,9 @@ exports.handle = function(event, context, callback) {
 			stage = pipeline.stages[stageName];
 
 			if (!stage) {
-				return callback(new Error('unknown stage'));
+				console.error(snsEvent);
+				console.error(pipeline);
+				return callback(new Error('unknown stage' + stageName));
 			}
 
 			const lambdaEvent = JSON.stringify(Object.assign(
