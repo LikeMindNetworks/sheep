@@ -25,7 +25,7 @@ exports.handle = function(event, context, callback) {
 				for (let i = 0; i < pipeline.stageOrder.length; ++i) {
 					if (pipeline.stageOrder[i] === snsEvent.prevStage) {
 
-						if (i === pipeline.length - 1) {
+						if (i === pipeline.stageOrder.length - 1) {
 							// no more stages
 							return callback(null, {});
 						} else {
