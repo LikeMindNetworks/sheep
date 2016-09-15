@@ -74,7 +74,7 @@ exports.handle = function(event, context, callback) {
 
 					lambda.invoke(
 						{
-							FunctionName: process.env.STACK_NAME + '_' +stage.executor,
+							FunctionName: 'sheepcd_' + stage.executor,
 							Payload: lambdaEvent
 						},
 						(err, data) => callback
