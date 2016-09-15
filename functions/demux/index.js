@@ -44,6 +44,13 @@ exports.handle = function(event, context, callback) {
 				return callback(new Error('unknown stage'));
 			}
 
+			const lambdaEvent = JSON.stringify(Object.assign(
+				snsEvent,
+				{
+					stage: stage
+				}
+			));
+
 			// store the stage config used to ran this task
 			s3.putObject(
 				{
@@ -58,17 +65,20 @@ exports.handle = function(event, context, callback) {
 						),
 						'config'
 					].join('/'),
-					Body: JSON.stringify(Object.assign(
-						snsEvent,
-						{
-							stage: stage
-						}
-					)),
+					Body: lambdaEvent,
 					ContentType: 'application/json'
 				},
 				(err, data) => {
 					// call executor lambda synchronously
-					callback(err, data);
+					let lambda = new AWS.Lambda();
+
+					lambda.invoke(
+						{
+							FunctionName: process.env.STACK_NAME + '_' +stage.executor,
+							Payload: lambdaEvent
+						},
+						(err, data) => callback
+					);
 				}
 			);
 		})
