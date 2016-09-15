@@ -22,7 +22,7 @@ exports.handle = function(event, context, callback) {
 			let stageName, stage;
 
 			if (snsEvent.prevStage) {
-				for (let i = 0; i < pipeline.length; ++i) {
+				for (let i = 0; i < pipeline.stageOrder.length; ++i) {
 					if (pipeline.stageOrder[i] === snsEvent.prevStage) {
 
 						if (i === pipeline.length - 1) {
@@ -41,9 +41,7 @@ exports.handle = function(event, context, callback) {
 			stage = pipeline.stages[stageName];
 
 			if (!stage) {
-				console.error(snsEvent);
-				console.error(pipeline);
-				return callback(new Error('unknown stage' + stageName));
+				return callback(new Error('unknown stage: ' + stageName));
 			}
 
 			const lambdaEvent = JSON.stringify(Object.assign(
