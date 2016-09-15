@@ -58,12 +58,12 @@ exports.handle = function(event, context, callback) {
 						),
 						'config'
 					].join('/'),
-					Body: Object.assign(
+					Body: JSON.stringify(Object.assign(
 						snsEvent,
 						{
 							stage: stage
 						}
-					),
+					)),
 					ContentType: 'application/json'
 				},
 				(err, data) => {
