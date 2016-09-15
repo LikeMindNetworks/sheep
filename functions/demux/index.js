@@ -18,10 +18,27 @@ exports.handle = function(event, context, callback) {
 			{ stackName: process.env.STACK_NAME },
 			snsEvent.pipeline
 		)
-		.then((pipelines) => {
-			let
-				stageName = snsEvent.stage || pipelines.stageOrder[0],
-				stage = pipelines.stages[stageName];
+		.then((pipeline) => {
+			let stageName, stage;
+
+			if (snsEvent.prevStage) {
+				for (let i = 0; i < pipeline.length; ++i) {
+					if (pipeline.stageOrder[i] === snsEvent.prevStage) {
+
+						if (i === pipeline.length - 1) {
+							// no more stages
+							return callback(null, {});
+						} else {
+							stageName = pipeline.stageOrder[i + 1];
+							break;
+						}
+					}
+				}
+			} else {
+				stageName = pipeline.stageOrder[0];
+			}
+
+			stage = pipeline.stages[stageName];
 
 			if (!stage) {
 				return callback(new Error('unknown stage'));
@@ -41,10 +58,12 @@ exports.handle = function(event, context, callback) {
 						),
 						'config'
 					].join('/'),
-					Body: JSON.stringify({
-						event: snsEvent,
-						stage: stage
-					}),
+					Body: Object.assign(
+						snsEvent,
+						{
+							stage: stage
+						}
+					),
 					ContentType: 'application/json'
 				},
 				(err, data) => {

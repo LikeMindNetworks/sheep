@@ -105,6 +105,7 @@ exports.handle = function(event, context, callback) {
 											{
 												TopicArn: process.env.SNS_TOPIC,
 												Message: JSON.stringify({
+													eventName: 'checkout',
 													pipeline: pipeline,
 													timestamp: timestamp,
 													commit: gitEvent.after,
