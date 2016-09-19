@@ -43,7 +43,6 @@ exports.handle = function(event, context, callback) {
 		return callback(ex);
 	}
 
-	// write stats report: Running
 	s3Util
 		.downloadDir( // copy source
 			AWS,
@@ -89,19 +88,30 @@ exports.handle = function(event, context, callback) {
 				message.prevStage = event.stage.name;
 				delete message.stage;
 
-				sns.publish(
-					{
-						TopicArn: process.env.SNS_TOPIC,
-						Message: JSON.stringify(message)
-					},
-					(err, data) => {
-						if (err) {
-							callback(err);
-						} else {
-							callback(null, dirs.reports);
+				return s3Util
+					.uploadDir(
+						AWS,
+						{
+							localDir: dirs.reports,
+							s3Params: {
+								Bucket: process.env.S3_ROOT,
+								Prefix: path.join(stageRoot, 'reports')
+							}
 						}
-					}
-				);
+					)
+					.then(() => sns.publish(
+						{
+							TopicArn: process.env.SNS_TOPIC,
+							Message: JSON.stringify(message)
+						},
+						(err, data) => {
+							if (err) {
+								callback(err);
+							} else {
+								callback(null, dirs.reports);
+							}
+						}
+					));
 			}
 
 			// if succeeded, and is blocked do nothing
