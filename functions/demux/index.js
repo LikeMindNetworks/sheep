@@ -56,7 +56,7 @@ exports.handle = function(event, context, callback) {
 				{
 					Bucket: process.env.S3_ROOT,
 					Key: [
-						pathUtil.getStageRoot(
+						pathUtil.getStageRootForVersion(
 							snsEvent.repo,
 							snsEvent.pipeline,
 							stageName,

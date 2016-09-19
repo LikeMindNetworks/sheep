@@ -15,7 +15,7 @@ const
 exports.handle = function(event, context, callback) {
 	const
 		cmds = event.stage.vars.cmds,
-		stageRoot = pathUtil.getStageRoot(
+		stageRoot = pathUtil.getStageRootForVersion(
 			event.repo,
 			event.pipeline,
 			event.stage.name,
