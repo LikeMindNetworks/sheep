@@ -3,6 +3,7 @@
 const
 	AWS = require('aws-sdk'),
 	s3 = require('s3'),
+	path = require('path'),
 	childProcess = require('child_process'),
 
 	runCommand = require('./lib/executor/run-command'),
