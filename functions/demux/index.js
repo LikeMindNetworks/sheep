@@ -74,13 +74,17 @@ exports.handle = function(event, context, callback) {
 					// call executor lambda synchronously
 					let lambda = new AWS.Lambda();
 
-					updateStageBuilds({
-						pipeline: snsEvent.pipeline,
-						stage: stageName,
-						commit: snsEvent.commit,
-						timestamp: snsEvent.timestamp,
-						status: 'STARTED'
-					}).then(
+					updateStageBuilds(
+						AWS,
+						{ stackName: process.env.STACK_NAME },
+						{
+							pipeline: snsEvent.pipeline,
+							stage: stageName,
+							commit: snsEvent.commit,
+							timestamp: snsEvent.timestamp,
+							status: 'STARTED'
+						}
+					).then(
 						() => new Promise(
 							(resolve, reject) => lambda.invoke(
 								{
@@ -97,23 +101,33 @@ exports.handle = function(event, context, callback) {
 							)
 						)
 					).then(
-						() => updateStageBuilds({
-							pipeline: snsEvent.pipeline,
-							stage: stageName,
-							commit: snsEvent.commit,
-							timestamp: snsEvent.timestamp,
-							status: 'SUCCEED'
-						})
+						() => updateStageBuilds(
+							AWS,
+							{ stackName: process.env.STACK_NAME },
+							{
+								pipeline: snsEvent.pipeline,
+								stage: stageName,
+								commit: snsEvent.commit,
+								timestamp: snsEvent.timestamp,
+								status: 'SUCCEED'
+							}
+						)
 					).then(
 						() => callback(null)
 					).catch(
-						() => updateStageBuilds({
-							pipeline: snsEvent.pipeline,
-							stage: stageName,
-							commit: snsEvent.commit,
-							timestamp: snsEvent.timestamp,
-							status: 'FAILED'
-						}).catch((ex) => ex).then(callback)
+						() => updateStageBuilds(
+							AWS,
+							{ stackName: process.env.STACK_NAME },
+							{
+								pipeline: snsEvent.pipeline,
+								stage: stageName,
+								commit: snsEvent.commit,
+								timestamp: snsEvent.timestamp,
+								status: 'FAILED'
+							}
+						)
+							.catch((ex) => ex)
+							.then(callback)
 					);
 				}
 			);
