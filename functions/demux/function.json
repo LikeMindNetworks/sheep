@@ -3,5 +3,5 @@
   "timeout": 300,
   "role": "arn:aws:iam::293503197324:role/placeholder",
   "dependencies": [],
-  "lib": [ "view", "utils" ]
+  "lib": [ "view", "utils", "manage" ]
 }

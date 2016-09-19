@@ -4,7 +4,9 @@ const
 	AWS = require('aws-sdk'),
 
 	pathUtil = require('./lib/utils/path-util'),
-	getPipeline = require('./lib/view/get-pipeline');
+	getPipeline = require('./lib/view/get-pipeline'),
+
+	updateStageBuilds = require('./lib/manage/update-stage-builds');
 
 exports.handle = function(event, context, callback) {
 
@@ -72,12 +74,46 @@ exports.handle = function(event, context, callback) {
 					// call executor lambda synchronously
 					let lambda = new AWS.Lambda();
 
-					lambda.invoke(
-						{
-							FunctionName: 'sheepcd_' + stage.executor,
-							Payload: lambdaEvent
-						},
-						(err, data) => callback
+					updateStageBuilds({
+						pipeline: snsEvent.pipeline,
+						stage: stageName,
+						commit: snsEvent.commit,
+						timestamp: snsEvent.timestamp,
+						status: 'STARTED'
+					}).then(
+						() => new Promise(
+							(resolve, reject) => lambda.invoke(
+								{
+									FunctionName: 'sheepcd_' + stage.executor,
+									Payload: lambdaEvent
+								},
+								(err, data) => {
+									if (err) {
+										reject(err);
+									} else {
+										resolve(data);
+									}
+								}
+							)
+						)
+					).then(
+						() => updateStageBuilds({
+							pipeline: snsEvent.pipeline,
+							stage: stageName,
+							commit: snsEvent.commit,
+							timestamp: snsEvent.timestamp,
+							status: 'SUCCEED'
+						})
+					).then(
+						() => callback(null)
+					).catch(
+						() => updateStageBuilds({
+							pipeline: snsEvent.pipeline,
+							stage: stageName,
+							commit: snsEvent.commit,
+							timestamp: snsEvent.timestamp,
+							status: 'FAILED'
+						}).catch((ex) => ex).then(callback)
 					);
 				}
 			);
