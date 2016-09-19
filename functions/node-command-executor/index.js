@@ -7,7 +7,6 @@ const
 
 	runCommand = require('./lib/executor/run-command'),
 	setupExecDir = require('./lib/executor/setup-execution-directory'),
-	updateExecStatus = require('./lib/executor/update-execution-status'),
 
 	pathUtil = require('./lib/utils/path-util'),
 	s3Util = require('./lib/utils/s3-util');
@@ -26,7 +25,7 @@ exports.handle = function(event, context, callback) {
 
 	// should i run
 	if (!cmds || cmds.length === 0) {
-		return callback(new Error('No command in cmds to run'));
+		return callback(new Error('No command(cmds) to run'));
 	}
 
 	let
@@ -45,8 +44,8 @@ exports.handle = function(event, context, callback) {
 	}
 
 	// write stats report: Running
-	updateExecStatus(AWS, stageRoot, dirs, 'RUNNING')
-		.then(() => s3Util.downloadDir( // copy source
+	s3Util
+		.downloadDir( // copy source
 			AWS,
 			{
 				localDir: dirs.src,
@@ -55,7 +54,7 @@ exports.handle = function(event, context, callback) {
 					Prefix: event.s3Path
 				}
 			}
-		))
+		)
 		.then(() => {
 			let run = () => {
 				let cmdline = cmds.shift();
@@ -79,8 +78,6 @@ exports.handle = function(event, context, callback) {
 			if (resCode !== 0) {
 				// failed
 				callback(null, dirs.reports);
-
-				return updateExecStatus(AWS, stageRoot, dirs, 'FAILED');
 			} else if (event.stage.state === 'UNBLOCKED') {
 				// if succeeded,
 				// and is not blocked file sns event
@@ -92,20 +89,18 @@ exports.handle = function(event, context, callback) {
 				message.prevStage = event.stage.name;
 				delete message.stage;
 
-				return updateExecStatus(AWS, stageRoot, dirs, 'SUCCEED').then(
-					() => sns.publish(
-						{
-							TopicArn: process.env.SNS_TOPIC,
-							Message: JSON.stringify(message)
-						},
-						(err, data) => {
-							if (err) {
-								callback(err);
-							} else {
-								callback(null, dirs.reports);
-							}
+				sns.publish(
+					{
+						TopicArn: process.env.SNS_TOPIC,
+						Message: JSON.stringify(message)
+					},
+					(err, data) => {
+						if (err) {
+							callback(err);
+						} else {
+							callback(null, dirs.reports);
 						}
-					)
+					}
 				);
 			}
 
