@@ -109,6 +109,12 @@ exports.handle = function(event, context, callback) {
 													pipeline: pipeline,
 													timestamp: timestamp,
 													commit: gitEvent.after,
+													commitMessage: gitEvent.head_commit
+														&& gitEvent.head_commit.message
+														|| '',
+													pusher: gitEvent.pusher
+														&& gitEvent.pusher.name
+														|| '',
 													repo: gitEvent.repository.full_name,
 													s3Path: s3Path
 												})
