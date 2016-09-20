@@ -2,6 +2,7 @@
 
 const
 	AWS = require('aws-sdk'),
+	fs = require('fs'),
 	s3 = require('s3'),
 	path = require('path'),
 	childProcess = require('child_process'),
@@ -77,9 +78,9 @@ exports.handle = function(event, context, callback) {
 		.then((resCode) => {
 			fs.writeFileSync(
 				path.join(stageRoot, 'reports', 'result.json'),
-				{
+				JSON.stringify({
 					resultCodes: resultCodes
-				}
+				})
 			);
 
 			if (resCode !== 0) {
