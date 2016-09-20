@@ -100,7 +100,7 @@ exports.handle = function(event, context, callback) {
 									console.log([
 										'Finished:', snsEvent.pipeline,
 										stageName, snsEvent.commit, snsEvent.timestamp,
-										err.message
+										err ? err.message : ''
 									].join(' '));
 
 									if (err) {
