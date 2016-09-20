@@ -1,0 +1,191 @@
+<!doctype html>
+
+<html>
+
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.2.1/mustache.min.js">
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.0/lodash.min.js">
+	</script>
+
+	<link rel='shortcut icon' href='data:image/png;base64,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' type='image/x-icon'>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+	<style type="text/css" media="screen">
+		body {
+			padding: 0 30px 0 30px;
+		}
+
+		.m-t-1 {
+			margin-top: 1rem;
+		}
+
+		.commit-message {
+			line-height: 16px;
+			max-height: 32px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.rel {
+			position: relative;
+		}
+
+		.abs {
+			position: absolute;
+		}
+
+		.arrow {
+			top: 60px;
+			right: -5px;
+
+			width: 0;
+			height: 0;
+			border-top: 20px solid transparent;
+			border-bottom: 20px solid transparent;
+		}
+
+		.arrow.shifted {
+			right: -15px;
+		}
+
+		.green-arrow {
+			border-left: 20px solid green;
+		}
+
+		.red-arrow {
+			border-left: 20px solid red;
+		}
+		.red-arrow.shifted {
+			border-left: 0;
+			border-right: 20px solid red;
+		}
+
+		.clear {
+			clear: left;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="view" class=container-fixed></div>
+
+	<div id="pipelineTemplate" style="display: none">
+		{{#pipelines}}
+			<div class="row"><h2 class="col-lg-12">{{repo}} | {{name}}</h2></div>
+			<div class="row">{{#stages}}{{> stage}}{{/stages}}</div>
+		{{/pipelines}}
+	</div>
+
+	<div id="stageTemplate" style="display: none">
+		<div class="col-md-3 rel {{#is4th}}clear{{/is4th}}">
+			<div class="panel
+					{{#isSuccessful}}panel-success{{/isSuccessful}}
+					{{#isStarted}}panel-warning{{/isStarted}}
+					{{#isFailed}}panel-danger{{/isFailed}}
+				">
+				<div class="panel-heading">
+					<h4 class="panel-title">{{name}}</h4>
+				</div>
+				<div class="panel-body">
+					{{#lastFive}}{{> build}}{{/lastFive}}
+				</div>
+			</div>
+			<div>
+				{{#isUnblocked}}
+				<div class="abs arrow green-arrow"></div>
+				<div class="abs arrow green-arrow shifted"></div>
+				{{/isUnblocked}}
+				{{#isBlocked}}
+				<div class="abs arrow red-arrow"></div>
+				<div class="abs arrow red-arrow shifted"></div>
+				{{/isBlocked}}
+			</div>
+		</div>
+	</div>
+
+	<div id="buildTemplate" style="display: none">
+		<div class="small m-t-1">
+			<div>
+				{{#isSuccessful}}
+				<span class="label label-success">{{status}}</span>
+				{{/isSuccessful}}
+				{{#isStarted}}
+				<span class="label label-warning">{{status}}</span>
+				{{/isStarted}}
+				{{#isFailed}}
+				<span class="label label-danger">{{status}}</span>
+				{{/isFailed}}
+				<span>{{commitShort}}</span>
+				<span class="pull-right">{{commitTime}}</span>
+			</div>
+			<div>
+				<span>author: </span><span>{{author.username}}</span>
+			</div>
+			<div class="commit-message">
+				<span>{{commitMessage}}</span>
+			</div>
+		</div>
+	</div>
+
+	<script>
+window.render= function(data) {
+	var getTemplate = function(template) {
+		return _.unescape(document.getElementById(template).innerHTML).trim();
+	};
+
+	var
+		pipelineTemplate = getTemplate('pipelineTemplate'),
+		stageTemplate = getTemplate('stageTemplate'),
+		buildTemplate = getTemplate('buildTemplate');
+
+	// pre data
+	data = data.map(function(pipeline) {
+		pipeline.stages = pipeline.stages.map(function(stage, idx) {
+			stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
+			stage.isStarted = stage.lastFive[0].status === 'STARTED';
+			stage.isFailed = stage.lastFive[0].status === 'FAILED';
+			stage.is4th = idx % 4 === 0;
+
+			if (idx < pipeline.stages.length - 1) {
+				stage.isUnblocked = stage.state === 'UNBLOCKED';
+				stage.isBlocked = stage.state === 'BLOCKED';
+			}
+
+			stage.lastFive = stage.lastFive.map(function(build) {
+				build.isSuccessful = build.status === 'SUCCEED';
+				build.isStarted = build.status === 'STARTED';
+				build.isFailed = build.status === 'FAILED';
+				build.commitShort = build.commit.substring(0, 7);
+
+				var t = new Date(build.commitTimestamp);
+				build.commitTime
+					= t.toLocaleDateString() + ' '+ t.toLocaleTimeString();
+				return build;
+			});
+
+			return stage;
+		});
+
+		return pipeline;
+	});
+
+	var html = Mustache.render(
+		pipelineTemplate,
+		{ pipelines: data },
+		{
+			stage: stageTemplate,
+			build: buildTemplate
+		}
+	);
+
+	document.getElementById('view').innerHTML = html;
+};
+	</script>
+</body>
+
+</html>
