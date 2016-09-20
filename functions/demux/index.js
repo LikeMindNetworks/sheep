@@ -74,6 +74,11 @@ exports.handle = function(event, context, callback) {
 					// call executor lambda synchronously
 					let lambda = new AWS.Lambda();
 
+					console.log([
+						'Starting:', snsEvent.pipeline,
+						stageName, snsEvent.commit, snsEvent.timestamp
+					].join(' '));
+
 					updateStageBuilds(
 						AWS,
 						{ stackName: process.env.STACK_NAME },
@@ -92,6 +97,12 @@ exports.handle = function(event, context, callback) {
 									Payload: lambdaEvent
 								},
 								(err, data) => {
+									console.log([
+										'Finished:', snsEvent.pipeline,
+										stageName, snsEvent.commit, snsEvent.timestamp,
+										err.message
+									].join(' '));
+
 									if (err) {
 										reject(err);
 									} else {
