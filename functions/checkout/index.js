@@ -112,6 +112,7 @@ exports.handle = function(event, context, callback) {
 													commitMessage: gitEvent.head_commit
 														&& gitEvent.head_commit.message
 														|| '',
+													commitUrl: gitEvent.head_commit.url,
 													author: gitEvent.head_commit
 														&& gitEvent.head_commit.author,
 													repo: gitEvent.repository.full_name,

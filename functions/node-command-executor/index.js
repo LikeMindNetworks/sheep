@@ -75,9 +75,16 @@ exports.handle = function(event, context, callback) {
 			return run();
 		})
 		.then((resCode) => {
+			fs.writeFileSync(
+				path.join(stageRoot, 'reports', 'result.json'),
+				{
+					resultCodes: resultCodes
+				}
+			);
+
 			if (resCode !== 0) {
 				// failed
-				callback(null, dirs.reports);
+				callback(resCode, dirs.reports);
 			} else if (event.stage.state === 'UNBLOCKED') {
 				// if succeeded,
 				// and is not blocked file sns event
