@@ -77,7 +77,7 @@ exports.handle = function(event, context, callback) {
 		})
 		.then((resCode) => {
 			fs.writeFileSync(
-				path.join(stageRoot, 'reports', 'result.json'),
+				path.join(dirs.reports, 'result.json'),
 				JSON.stringify({
 					resultCodes: resultCodes
 				})
