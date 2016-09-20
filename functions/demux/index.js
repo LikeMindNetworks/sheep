@@ -6,7 +6,10 @@ const
 	pathUtil = require('./lib/utils/path-util'),
 	getPipeline = require('./lib/view/get-pipeline'),
 
-	updateStageBuilds = require('./lib/manage/update-stage-builds');
+	updateStageBuilds = require('./lib/manage/update-stage-builds'),
+	ReOldBuildRunError = require(
+		'./lib/manage/management-error'
+	).ReOldBuildRunError;
 
 exports.handle = function(event, context, callback) {
 
@@ -126,25 +129,29 @@ exports.handle = function(event, context, callback) {
 					).then(
 						() => callback(null)
 					).catch(
-						() => updateStageBuilds(
-							AWS,
-							{ stackName: process.env.STACK_NAME },
-							{
-								pipeline: snsEvent.pipeline,
-								stage: stageName,
-								commit: snsEvent.commit,
-								timestamp: snsEvent.timestamp,
-								status: 'FAILED'
+						(ex) => {
+							console.log(ex);
+
+							if (ex instanceof ReOldBuildRunError) {
+								callback(null);
+							} else {
+								return updateStageBuilds(
+									AWS,
+									{ stackName: process.env.STACK_NAME },
+									{
+										pipeline: snsEvent.pipeline,
+										stage: stageName,
+										commit: snsEvent.commit,
+										timestamp: snsEvent.timestamp,
+										status: 'FAILED'
+									}
+								).catch((ex) => ex).then(callback);
 							}
-						)
-							.catch((ex) => ex)
-							.then(callback)
+						}
 					);
 				}
 			);
 		})
-		.catch((ex) => {
-			callback(ex);
-		});
+		.catch(callback);
 
 };
