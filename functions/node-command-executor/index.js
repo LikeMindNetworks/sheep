@@ -79,6 +79,7 @@ exports.handle = function(event, context, callback) {
 			fs.writeFileSync(
 				path.join(dirs.reports, 'result.json'),
 				JSON.stringify({
+					tasks: cmds,
 					resultCodes: resultCodes
 				})
 			);

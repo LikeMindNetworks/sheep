@@ -112,15 +112,22 @@
 		<div class="small m-t-1">
 			<div>
 				{{#isSuccessful}}
-				<span class="label label-success">{{status}}</span>
+				<span class="label label-success">
 				{{/isSuccessful}}
 				{{#isStarted}}
-				<span class="label label-warning">{{status}}</span>
+				<span class="label label-warning">
 				{{/isStarted}}
 				{{#isFailed}}
-				<span class="label label-danger">{{status}}</span>
+				<span class="label label-danger">
 				{{/isFailed}}
-				<span><a href="{{commitUrl}}">{{commitShort}}</a></span>
+					<a href="{{pathname}}/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
+						{{status}}
+					</a>
+				</span>
+
+				<span>
+					<a target="_blank" href="{{commitUrl}}">{{commitShort}}</a>
+				</span>
 				<span class="pull-right">{{commitTime}}</span>
 			</div>
 			<div>
@@ -157,6 +164,11 @@ window.render= function(data) {
 			}
 
 			stage.lastFive = stage.lastFive.map(function(build) {
+				build.stage = stage.name;
+				build.pipeline = pipeline.name;
+				build.repo = pipeline.repo;
+				build.pathname = location.pathname;
+
 				build.isSuccessful = build.status === 'SUCCEED';
 				build.isStarted = build.status === 'STARTED';
 				build.isFailed = build.status === 'FAILED';

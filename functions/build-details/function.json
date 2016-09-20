@@ -1,0 +1,7 @@
+{
+  "description": "buildDetails",
+  "timeout": 300,
+  "role": "arn:aws:iam::293503197324:role/placeholder",
+  "dependencies": [ "s3", "rimraf" ],
+  "lib": [ "report", "utils", "view", "executor" ]
+}
