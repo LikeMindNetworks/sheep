@@ -216,7 +216,7 @@ window.render= function(data) {
 	document.getElementById('view').innerHTML = html;
 };
 
-setInterval(function() { location.reload(); }, 30000);
+setInterval(function() { document.hidden || location.reload(); }, 30000);
 	</script>
 </body>
 
