@@ -15,7 +15,7 @@ const
 
 exports.handle = function(event, context, callback) {
 	const
-		cmds = event.stage.vars.cmds,
+		cmds = event.stage.vars.cmds.slice(0),
 		stageRoot = pathUtil.getStageRootForVersion(
 			event.repo,
 			event.pipeline,
@@ -79,7 +79,7 @@ exports.handle = function(event, context, callback) {
 			fs.writeFileSync(
 				path.join(dirs.reports, 'result.json'),
 				JSON.stringify({
-					tasks: cmds,
+					tasks: event.stage.vars.cmds,
 					resultCodes: resultCodes
 				})
 			);
