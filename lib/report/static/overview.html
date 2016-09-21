@@ -68,6 +68,11 @@
 		.clear {
 			clear: left;
 		}
+
+		.status-link {
+			margin-right: 10px;
+			color: white;
+		}
 	</style>
 </head>
 
@@ -82,7 +87,7 @@
 	</div>
 
 	<div id="stageTemplate" style="display: none">
-		<div class="col-md-3 rel {{#is4th}}clear{{/is4th}}">
+		<div class="col-sm-4 col-md-3 rel {{#is4th}}clear{{/is4th}}">
 			<div class="panel
 					{{#isSuccessful}}panel-success{{/isSuccessful}}
 					{{#isStarted}}panel-warning{{/isStarted}}
@@ -112,17 +117,15 @@
 		<div class="small m-t-1">
 			<div>
 				{{#isSuccessful}}
-				<span class="label label-success">
+				<span class="label label-success status-link">
 				{{/isSuccessful}}
 				{{#isStarted}}
-				<span class="label label-warning">
+				<span class="label label-warning status-link">
 				{{/isStarted}}
 				{{#isFailed}}
-				<span class="label label-danger">
+				<span class="label label-danger status-link">
 				{{/isFailed}}
-					<a href="{{pathname}}/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
-						{{status}}
-					</a>
+					{{status}}
 				</span>
 
 				<span>
@@ -131,7 +134,13 @@
 				<span class="pull-right">{{commitTime}}</span>
 			</div>
 			<div>
-				<span>author: </span><span>{{author.username}}</span>
+				<span>author: </span>
+				<span>{{author.username}}</span>
+				<a
+					class="pull-right"
+					href="{{pathname}}/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
+					Details
+				</a>
 			</div>
 			<div class="commit-message">
 				<span>{{commitMessage}}</span>
