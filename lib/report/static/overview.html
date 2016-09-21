@@ -71,7 +71,6 @@
 
 		.status-link {
 			margin-right: 10px;
-			color: white;
 		}
 	</style>
 </head>
@@ -136,11 +135,21 @@
 			<div>
 				<span>author: </span>
 				<span>{{author.username}}</span>
+
+				{{#isSuccessful}}
 				<a
 					class="pull-right"
 					href="{{pathname}}/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
 					Details
 				</a>
+				{{/isSuccessful}}
+				{{#isFailed}}
+				<a
+					class="pull-right"
+					href="{{pathname}}/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
+					Details
+				</a>
+				{{/isFailed}}
 			</div>
 			<div class="commit-message">
 				<span>{{commitMessage}}</span>
