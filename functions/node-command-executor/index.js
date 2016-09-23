@@ -46,7 +46,17 @@ exports.handle = function(event, context, callback) {
 	}
 
 	s3Util
-		.downloadDir( // copy source
+		.downloadFile(
+			AWS,
+			{
+				localFile: path.join(dirs.cwd, 'config'),
+				s3Params: {
+					Bucket: process.env.S3_ROOT,
+					Key: path.join(stageRoot, 'config')
+				}
+			}
+		)
+		.then(() => s3Util.downloadDir( // copy source
 			AWS,
 			{
 				localDir: dirs.src,
@@ -55,7 +65,7 @@ exports.handle = function(event, context, callback) {
 					Prefix: event.s3Path
 				}
 			}
-		)
+		))
 		.then(() => {
 			let run = () => {
 				let cmdline = cmds.shift();
