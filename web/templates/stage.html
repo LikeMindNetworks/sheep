@@ -5,7 +5,19 @@
 			{{#isFailed}}panel-danger{{/isFailed}}
 		">
 		<div class="panel-heading">
-			<h4 class="panel-title">{{name}}</h4>
+			<h4 class="panel-title">
+				<span>{{name}}</span>
+				<span
+						class="action pull-right m-l-1 text-muted"
+						onclick="deleteStage('{{repo}}','{{pipeline}}','{{name}}');">
+					delete
+				</span>
+				<span
+						class="action pull-right m-l-1 text-muted"
+						onclick="updateStage('{{repo}}','{{pipeline}}','{{name}}');">
+					update
+				</span>
+			</h4>
 		</div>
 		<div class="panel-body">
 			{{#lastFive}}{{> build}}{{/lastFive}}

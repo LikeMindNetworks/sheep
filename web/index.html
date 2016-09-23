@@ -240,6 +240,21 @@ window.toggleStageState = function(repo, pipeline, stage) {
 	);
 };
 
+window.deleteStage = function(repo, pipeline, stage) {
+	var stageConfirm = window.prompt(
+		'Are you sure to delete stage: ' + stage + '? '
+			+ '\nPlease re-type the stage name:'
+	);
+
+	if (stageConfirm !== stage) {
+		renderError('Mismatching stage name.');
+		return;
+	}
+};
+
+window.updateStage = function(repo, pipeline, stage) {
+};
+
 window.showLogin = function() {
 	renderLoading();
 
