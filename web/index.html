@@ -100,6 +100,54 @@ window.saveCreds = function() {
 	localStorage.creds = JSON.stringify(_model.creds);
 };
 
+window.callLambda = function(functionName, payload) {
+	var config = {
+		region: _model.creds.region,
+		credentials: new AWS.Credentials(
+			_model.creds.accessKeyId,
+			_model.creds.secretAccessKey
+		)
+	};
+
+	AWS.config.update(config);
+
+	if (window.isBusy) {
+		return new Promise(function(resolve, reject) {
+			reject(new Error('Client is Busy'));
+		});
+	}
+
+	return new Promise(function(resolve, reject) {
+		window.isBusy = true;
+
+		try {
+			new AWS.Lambda().invoke(
+				{
+					FunctionName: _model.creds.stackName + '_sheepcd_' + functionName,
+					Payload: JSON.stringify(payload || {})
+				},
+				function(err, data) {
+					window.isBusy = false;
+
+					if (err) {
+						reject(err);
+					} else {
+						data = JSON.parse(data.Payload);
+
+						if (data.errorMessage) {
+							reject(data.errorMessage);
+						} else {
+							resolve(data);
+						}
+					}
+				}
+			);
+		} catch(ex) {
+			window.isBusy = false;
+		}
+	});
+};
+
 window.login = function() {
 	var
 		stackName = document.getElementById('stackNameInput').value,
@@ -147,84 +195,66 @@ window.showOverview = function() {
 
 	renderLoading();
 
-	new AWS.Lambda().invoke(
-		{
-			FunctionName: _model.creds.stackName + '_sheepcd_overview',
-			Payload: JSON.stringify({})
-		},
-		function(err, data) {
-			if (err) {
-				renderError(err.message);
-			} else {
-				_model.pipelines = JSON.parse(data.Payload);
+	callLambda('overview')
+		.then(function(pipelines) {
+			_model.pipelines = pipelines.map(function(pipeline) {
+				pipeline.stages = pipeline.stages.map(function(stage, idx) {
+					stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
+					stage.isStarted = stage.lastFive[0].status === 'STARTED';
+					stage.isFailed = stage.lastFive[0].status === 'FAILED';
+					stage.is4th = idx % 4 === 0;
 
-				if (_model.pipelines.errorMessage) {
-					renderError(_model.pipelines.errorMessage);
-					return;
-				}
+					if (idx < pipeline.stages.length - 1) {
+						stage.isUnblocked = stage.state === 'UNBLOCKED';
+						stage.isBlocked = stage.state === 'BLOCKED';
+					}
 
-				_model.pipelines = _model.pipelines.map(function(pipeline) {
-					pipeline.stages = pipeline.stages.map(function(stage, idx) {
-						stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
-						stage.isStarted = stage.lastFive[0].status === 'STARTED';
-						stage.isFailed = stage.lastFive[0].status === 'FAILED';
-						stage.is4th = idx % 4 === 0;
+					stage.lastFive = stage.lastFive.map(function(build) {
+						build.stage = stage.name;
+						build.pipeline = pipeline.name;
+						build.repo = pipeline.repo;
 
-						if (idx < pipeline.stages.length - 1) {
-							stage.isUnblocked = stage.state === 'UNBLOCKED';
-							stage.isBlocked = stage.state === 'BLOCKED';
-						}
+						build.isSuccessful = build.status === 'SUCCEED';
+						build.isStarted = build.status === 'STARTED';
+						build.isFailed = build.status === 'FAILED';
+						build.commitShort = build.commit.substring(0, 7);
 
-						stage.lastFive = stage.lastFive.map(function(build) {
-							build.stage = stage.name;
-							build.pipeline = pipeline.name;
-							build.repo = pipeline.repo;
-
-							build.isSuccessful = build.status === 'SUCCEED';
-							build.isStarted = build.status === 'STARTED';
-							build.isFailed = build.status === 'FAILED';
-							build.commitShort = build.commit.substring(0, 7);
-
-							var t = new Date(build.commitTimestamp);
-							build.commitTime
-								= t.toLocaleDateString() + ' '+ t.toLocaleTimeString();
-							return build;
-						});
-
-						return stage;
+						var t = new Date(build.commitTimestamp);
+						build.commitTime
+							= t.toLocaleDateString() + ' '+ t.toLocaleTimeString();
+						return build;
 					});
 
-					return pipeline;
+					return stage;
 				});
 
-				getTemplate('pipelines.html')
-					.then(function(pipelineTemplate) {
-						return getTemplate('stage.html')
-							.then(function(stageTemplate) {
-								return [pipelineTemplate, stageTemplate];
-							});
-					})
-					.then(function(templates) {
-						return getTemplate('build-summary.html')
-							.then(function(buildSummaryTemplate) {
-								templates.push(buildSummaryTemplate);
-								return templates;
-							});
-					})
-					.then(function(templates) {
-						render(templates[0], _model, {
-							stage: templates[1],
-							build: templates[2]
-						});
-					})
-					.catch(function(ex) {
-						_model.error = ex;
+				return pipeline;
+			});
 
-						page.show('/login');
+			return getTemplate('pipelines.html')
+				.then(function(pipelineTemplate) {
+					return getTemplate('stage.html')
+						.then(function(stageTemplate) {
+							return [pipelineTemplate, stageTemplate];
+						});
+				})
+				.then(function(templates) {
+					return getTemplate('build-summary.html')
+						.then(function(buildSummaryTemplate) {
+							templates.push(buildSummaryTemplate);
+							return templates;
+						});
+				})
+				.then(function(templates) {
+					render(templates[0], _model, {
+						stage: templates[1],
+						build: templates[2]
 					});
-			}
-		}
-	);
+				});
+		})
+		.catch(function(ex) {
+			renderError(ex.message);
+		});
 };
 
 window.showBuildDetails = function(ctx) {
@@ -250,37 +280,24 @@ window.showBuildDetails = function(ctx) {
 		query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
 	}
 
-	new AWS.Lambda().invoke(
-		{
-			FunctionName: _model.creds.stackName + '_sheepcd_build-details',
-			Payload: JSON.stringify(query)
-		},
-		function(err, data) {
-			if (err) {
-				renderError(err.message);
-			} else {
-				_model.build = JSON.parse(data.Payload);
-
-				if (_model.build.errorMessage) {
-					renderError(_model.build.errorMessage);
-					return;
-				}
-
-				getTemplate('build-output.html')
-					.then(function(buildOutputTemplate) {
-						return getTemplate('build-task.html')
-							.then(function(buildTaskTemplate) {
-								return [buildOutputTemplate, buildTaskTemplate];
-							});
-					})
-					.then(function(templates) {
-						render(templates[0], _model.build, {
-							task: templates[1]
+	callLambda('build-details', query)
+		.then(function(build) {
+			getTemplate('build-output.html')
+				.then(function(buildOutputTemplate) {
+					return getTemplate('build-task.html')
+						.then(function(buildTaskTemplate) {
+							return [buildOutputTemplate, buildTaskTemplate];
 						});
+				})
+				.then(function(templates) {
+					render(templates[0], _model.build = build, {
+						task: templates[1]
 					});
-			}
-		}
-	);
+				});
+		})
+		.catch(function(ex) {
+			renderError(ex.message);
+		});
 };
 
 loadCreds();
