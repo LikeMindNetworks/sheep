@@ -12,8 +12,8 @@ exports.handle = function(event, context, callback) {
 		{
 			stackName: process.env.STACK_NAME
 		}
-	).then(function(html) {
-		callback(null, html)
+	).then(function(data) {
+		callback(null, data)
 	}).catch(function(ex) {
 		callback(ex);
 	});

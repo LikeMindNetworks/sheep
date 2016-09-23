@@ -134,7 +134,7 @@ window.callLambda = function(functionName, payload) {
 					} else {
 						data = JSON.parse(data.Payload);
 
-						if (data.errorMessage) {
+						if (data && data.errorMessage) {
 							reject(data.errorMessage);
 						} else {
 							resolve(data);

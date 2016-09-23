@@ -18,8 +18,8 @@ exports.handle = function(event, context, callback) {
 			stage: event.stage,
 			versionIdentifier: event.versionIdentifier
 		}
-	).then(function(html) {
-		callback(null, html)
+	).then(function(data) {
+		callback(null, data);
 	}).catch(function(ex) {
 		callback(ex);
 	});
