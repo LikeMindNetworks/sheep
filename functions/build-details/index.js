@@ -7,16 +7,16 @@ const
 
 exports.handle = function(event, context, callback) {
 
-	buildDetails.renderHTML(
+	buildDetails(
 		AWS,
 		{
 			stackName: process.env.STACK_NAME
 		},
 		{
-			repo: event.params.querystring.repo,
-			pipeline: event.params.querystring.pipeline,
-			stage: event.params.querystring.stage,
-			versionIdentifier: event.params.querystring.versionIdentifier
+			repo: event.repo,
+			pipeline: event.pipeline,
+			stage: event.stage,
+			versionIdentifier: event.versionIdentifier
 		}
 	).then(function(html) {
 		callback(null, html)

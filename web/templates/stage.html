@@ -1,0 +1,24 @@
+<div class="col-md-4 rel {{#is4th}}clear{{/is4th}}">
+	<div class="panel
+			{{#isSuccessful}}panel-success{{/isSuccessful}}
+			{{#isStarted}}panel-warning{{/isStarted}}
+			{{#isFailed}}panel-danger{{/isFailed}}
+		">
+		<div class="panel-heading">
+			<h4 class="panel-title">{{name}}</h4>
+		</div>
+		<div class="panel-body">
+			{{#lastFive}}{{> build}}{{/lastFive}}
+		</div>
+	</div>
+	<div>
+		{{#isUnblocked}}
+		<div class="abs arrow green-arrow"></div>
+		<div class="abs arrow green-arrow shifted"></div>
+		{{/isUnblocked}}
+		{{#isBlocked}}
+		<div class="abs arrow red-arrow"></div>
+		<div class="abs arrow red-arrow shifted"></div>
+		{{/isBlocked}}
+	</div>
+</div>

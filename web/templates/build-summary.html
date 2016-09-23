@@ -1,0 +1,42 @@
+<div class="small m-t-1">
+	<div>
+		{{#isSuccessful}}
+		<span class="label label-success status-link">
+		{{/isSuccessful}}
+		{{#isStarted}}
+		<span class="label label-warning status-link">
+		{{/isStarted}}
+		{{#isFailed}}
+		<span class="label label-danger status-link">
+		{{/isFailed}}
+			{{status}}
+		</span>
+
+		<span>
+			<a target="_blank" href="{{commitUrl}}">{{commitShort}}</a>
+		</span>
+		<span class="pull-right">{{commitTime}}</span>
+	</div>
+	<div>
+		<span>author: </span>
+		<span>{{author.username}}</span>
+
+		{{#isSuccessful}}
+		<a
+			class="pull-right"
+			href="/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
+			Details
+		</a>
+		{{/isSuccessful}}
+		{{#isFailed}}
+		<a
+			class="pull-right"
+			href="/build?versionIdentifier={{commitTimestamp}}-{{commit}}&stage={{stage}}&pipeline={{pipeline}}&repo={{repo}}">
+			Details
+		</a>
+		{{/isFailed}}
+	</div>
+	<div class="commit-message">
+		<span>{{commitMessage}}</span>
+	</div>
+</div>

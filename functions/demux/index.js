@@ -96,7 +96,9 @@ exports.handle = function(event, context, callback) {
 						() => new Promise(
 							(resolve, reject) => lambda.invoke(
 								{
-									FunctionName: 'sheepcd_' + stage.executor,
+									FunctionName: process.env.STACK_NAME
+										+ '_sheepcd_'
+										+ stage.executor,
 									Payload: lambdaEvent
 								},
 								(err, data) => {

@@ -23,78 +23,76 @@ gulp.task('clean', function() {
 	return gulp.src('./build/*').pipe(rm());
 });
 
+gulp.task('prompt', function() {
+	var mem = cache.mem || require('./project.json').memory;
+
+	return gulp
+		.src('package.json')
+		.pipe(
+			prompt.prompt(
+				{
+					type: 'input',
+					name: 'executorRole',
+					message: 'AWS Role for lambda execution (arn):',
+					default: cache.executorRole
+				},
+				(result) => {
+					cache.executorRole = result.executorRole;
+				}
+			)
+		)
+		.pipe(
+			prompt.prompt(
+				{
+					type: 'input',
+					name: 'stackName',
+					message: 'AWS Cloud Formation Stack Name:',
+					default: cache.stackName
+				},
+				(result) => {
+					cache.stackName = result.stackName;
+				}
+			)
+		)
+		.pipe(
+			prompt.prompt(
+				{
+					type: 'input',
+					name: 'mem',
+					message: 'Sheep C/D executor lambda memory size:',
+					default: mem
+				},
+				(result) => {
+					cache.mem = result.mem;
+				}
+			)
+		)
+		.pipe(
+			prompt.prompt(
+				{
+					type: 'input',
+					name: 'snsTopic',
+					message: 'Sheep C/D SNS topic arn',
+					default: cache.snsTopic
+				},
+				(result) => {
+					cache.snsTopic = result.snsTopic;
+				}
+			)
+		);
+});
+
 gulp.task('copy-functions', function() {
 	return gulp
 		.src('./functions/**')
 		.pipe(gulp.dest('build/functions'));
 });
 
-gulp.task('copy-project-json', function() {
-	return gulp
-		.src('./project.json')
-		.pipe(gulp.dest('build'));
-});
-
-gulp.task(
-	'transform-config',
-	['copy-project-json', 'copy-functions'],
-	function() {
+gulp.task('transform-functions', function() {
 		var mem = require('./project.json').memory;
 
 		return gulp
 			.src('./build/**/function.json')
-			.pipe(
-				prompt.prompt(
-					{
-						type: 'input',
-						name: 'executorRole',
-						message: 'AWS Role for lambda execution (arn):',
-						default: cache.executorRole
-					},
-					(result) => {
-						cache.executorRole = result.executorRole;
-					}
-				)
-			)
-			.pipe(
-				prompt.prompt(
-					{
-						type: 'input',
-						name: 'stackName',
-						message: 'AWS Cloud Formation Stack Name:',
-						default: cache.stackName
-					},
-					(result) => {
-						cache.stackName = result.stackName;
-					}
-				)
-			)
-			.pipe(
-				prompt.prompt(
-					{
-						type: 'input',
-						name: 'mem',
-						message: 'Sheep C/D executor lambda memory size:',
-						default: mem
-					},
-					(result) => {
-						mem = result.mem;
-					}
-				)
-			)
-			.pipe(
-				prompt.prompt(
-					{
-						type: 'input',
-						name: 'snsTopic',
-						message: 'Sheep C/D SNS topic arn',
-						default: cache.snsTopic
-					},
-					(result) => {
-						cache.snsTopic = result.snsTopic;
-					}
-				)
-			)
 			.pipe(transform(
 				(contents) => {
 					let fnJson = JSON.parse(contents.toString());
@@ -113,6 +111,21 @@ gulp.task(
 			.pipe(gulp.dest('./build'));
 	}
 );
+
+gulp.task('transform-project', function() {
+	return gulp
+		.src('./project.json')
+		.pipe(transform(
+			(contents) => {
+				let projJson = JSON.parse(contents.toString());
+
+				projJson.name = cache.stackName + '_' + projJson.name;
+
+				return JSON.stringify(projJson, ' ', 2);
+			}
+		))
+		.pipe(gulp.dest('build'));
+});
 
 gulp.task('install-deps', function() {
 	return gulp
@@ -220,7 +233,11 @@ gulp.task('save-config-cache', function() {
 gulp.task('default', function() {
 	runSequence(
 		'clean',
-		'transform-config', 'checkout-config',
+		'prompt',
+		'copy-functions',
+		'transform-project',
+		'transform-functions',
+		'checkout-config',
 		'install-deps', 'install-lib',
 		'save-config-cache'
 	);

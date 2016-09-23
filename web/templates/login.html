@@ -1,0 +1,72 @@
+<div class="row m-b-1">
+	<div class="col-lg-4">
+		<div class="input-group">
+			<span class="input-group-addon">StackName</span>
+			<input
+				id="stackNameInput"
+				class="form-control" type="text"
+				value="{{stackName}}" placeholder="name of the cloudformation stack"
+			/>
+		</div>
+	</div>
+</div>
+
+<div class="row m-b-1">
+	<div class="col-lg-4">
+		<div class="input-group">
+			<span class="input-group-addon">Region</span>
+			<input
+				id="regionInput"
+				class="form-control" type="text"
+				value="{{region}}" placeholder="region"
+			/>
+		</div>
+	</div>
+</div>
+
+<div class="row m-b-1">
+	<div class="col-lg-4">
+		<div class="input-group">
+			<span class="input-group-addon">Access Key</span>
+			<input
+				id="accessKeyIdInput"
+				class="form-control" type="text"
+				value="{{accessKeyId}}" placeholder="aws_access_key_id"
+			/>
+		</div>
+	</div>
+</div>
+
+<div class="row m-b-1">
+	<div class="col-lg-4">
+		<div class="input-group">
+			<span class="input-group-addon">Secret Key</span>
+			<input
+				id="secretAccessKeyInput"
+				class="form-control" type="password"
+				value="{{secretAccessKey}}" placeholder="aws_secret_access_key"
+			/>
+		</div>
+	</div>
+</div>
+
+<div class="row m-b-1">
+	<div class="col-lg-4  text-muted">
+		<div class="pull-right ">
+			<input id="saveCredentialsInput" type="checkbox" {{saveCredentials}}>
+			<span>save credentials</span>
+			<button class="btn btn-default" onclick="login()">Go</button>
+		</div>
+	</div>
+</div>
+
+<div class="row m-b-1">
+	<div class="col-lg-4 text-muted">
+		<h5>Note:</h5>
+		<ul>
+			<li>These credentials are never sent out to the networks</li>
+			<li>Use a separate AWS credential with minmial rights</li>
+			<li>Need rights to call lambdas created by sheep</li>
+		</ul>
+	</div>
+</div>

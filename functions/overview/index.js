@@ -7,7 +7,7 @@ const
 
 exports.handle = function(event, context, callback) {
 
-	overview.renderHTML(
+	overview(
 		AWS,
 		{
 			stackName: process.env.STACK_NAME

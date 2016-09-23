@@ -1,0 +1,59 @@
+body {
+	padding: 0 30px 0 30px;
+}
+
+.m-b-1 {
+	margin-bottom: 10px;
+}
+.m-t-1 {
+	margin-top: 1rem;
+}
+
+.commit-message {
+	line-height: 16px;
+	max-height: 32px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rel {
+	position: relative;
+}
+
+.abs {
+	position: absolute;
+}
+
+.arrow {
+	top: 60px;
+	right: -5px;
+
+	width: 0;
+	height: 0;
+	border-top: 20px solid transparent;
+	border-bottom: 20px solid transparent;
+}
+
+.arrow.shifted {
+	right: -15px;
+}
+
+.green-arrow {
+	border-left: 20px solid green;
+}
+
+.red-arrow {
+	border-left: 20px solid red;
+}
+.red-arrow.shifted {
+	border-left: 0;
+	border-right: 20px solid red;
+}
+
+.clear {
+	clear: left;
+}
+
+.status-link {
+	margin-right: 10px;
+}

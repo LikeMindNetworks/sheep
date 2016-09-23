@@ -9,6 +9,9 @@
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/superagent/2.3.0/superagent.min.js">
 	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/page.js/1.7.1/page.min.js">
+	</script>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.6.4.min.js"></script>
 
 	<link rel='shortcut icon' href='./favicon.png' type='image/x-icon'>
 	<!-- Latest compiled and minified CSS -->
@@ -17,31 +20,290 @@
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 
-	<style type="text/css" media="screen">
-		body {
-			padding: 0 30px 0 30px;
-		}
-	</style>
+	<link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
+	<div class=container-fixed>
+		<ul class="nav nav-tabs nav-justified m-b-1">
+			<li>
+				<a href="./login">Account</a>
+			</li>
+			<li>
+				<a href="./overview">Overview</a>
+			</li>
+		</ul>
+	</div>
+
+	<div id="error" class=container-fixed></div>
 	<div id="view" class=container-fixed></div>
 
 	<script>
-window.getTemplate = function(templatePath) {
+
+var _model = {};
+
+window.getTemplate = function(templateName) {
+	return new Promise(function(resolve, reject) {
+		superagent.get('./templates/' + templateName).end(function(err, res) {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(res.text);
+			}
+		});
+	});
 };
 
-window.render= function(data) {
-	// var html = Mustache.render(
-	// 	getTemplate('outputTemplate'),
-	// 	data,
-	// 	{
-	// 		task: getTemplate('taskTemplate')
-	// 	}
-	// );
+window.render= function(template, data, partials) {
+	var html = Mustache.render(
+		template,
+		data,
+		partials
+	);
 
-	document.getElementById('view').innerHTML = '';
+	document.getElementById('view').innerHTML = html;
 };
+
+window.renderLoading = function() {
+	render(
+		'<div class="row row-p-b"><h2 class="col-lg-12">Loading...</h2></div>',
+		_model.creds
+	);
+};
+
+window.renderError = function(message) {
+	var html = Mustache.render(
+		'{{#message}}<div class="alert alert-danger">{{message}}</div>{{/message}}',
+		{
+			message: message
+		}
+	);
+
+	document.getElementById('error').innerHTML = html;
+};
+
+window.loadCreds = function() {
+	try {
+		_model.creds = Object.assign(
+			{
+				region: 'us-east-1'
+			},
+			JSON.parse(localStorage.creds) || {}
+		);
+	} catch(ex) {
+		_model.creds = { region: 'us-east-1' };
+		saveCreds();
+	}
+};
+
+window.saveCreds = function() {
+	localStorage.creds = JSON.stringify(_model.creds);
+};
+
+window.login = function() {
+	var
+		stackName = document.getElementById('stackNameInput').value,
+		region = document.getElementById('regionInput').value,
+		saveCredentials = document.getElementById(
+			'saveCredentialsInput'
+		).checked,
+
+		accessKeyId = document.getElementById('accessKeyIdInput').value,
+		secretAccessKey = document.getElementById(
+			'secretAccessKeyInput'
+		).value;
+
+	_model.creds.stackName = stackName;
+	_model.creds.region = region;
+	_model.creds.saveCredentials = saveCredentials && 'checked';
+
+	if (saveCredentials) {
+		_model.creds.accessKeyId = accessKeyId;
+		_model.creds.secretAccessKey = secretAccessKey;
+	}
+
+	saveCreds();
+	page.show('/overview');
+};
+
+window.showLogin = function() {
+	renderLoading();
+
+	getTemplate('login.html').then(function(template) {
+		render(template, _model.creds);
+	});
+};
+
+window.showOverview = function() {
+	var config = {
+		region: _model.creds.region,
+		credentials: new AWS.Credentials(
+			_model.creds.accessKeyId,
+			_model.creds.secretAccessKey
+		)
+	};
+
+	AWS.config.update(config);
+
+	renderLoading();
+
+	new AWS.Lambda().invoke(
+		{
+			FunctionName: _model.creds.stackName + '_sheepcd_overview',
+			Payload: JSON.stringify({})
+		},
+		function(err, data) {
+			if (err) {
+				renderError(err.message);
+			} else {
+				_model.pipelines = JSON.parse(data.Payload);
+
+				if (_model.pipelines.errorMessage) {
+					renderError(_model.pipelines.errorMessage);
+					return;
+				}
+
+				_model.pipelines = _model.pipelines.map(function(pipeline) {
+					pipeline.stages = pipeline.stages.map(function(stage, idx) {
+						stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
+						stage.isStarted = stage.lastFive[0].status === 'STARTED';
+						stage.isFailed = stage.lastFive[0].status === 'FAILED';
+						stage.is4th = idx % 4 === 0;
+
+						if (idx < pipeline.stages.length - 1) {
+							stage.isUnblocked = stage.state === 'UNBLOCKED';
+							stage.isBlocked = stage.state === 'BLOCKED';
+						}
+
+						stage.lastFive = stage.lastFive.map(function(build) {
+							build.stage = stage.name;
+							build.pipeline = pipeline.name;
+							build.repo = pipeline.repo;
+
+							build.isSuccessful = build.status === 'SUCCEED';
+							build.isStarted = build.status === 'STARTED';
+							build.isFailed = build.status === 'FAILED';
+							build.commitShort = build.commit.substring(0, 7);
+
+							var t = new Date(build.commitTimestamp);
+							build.commitTime
+								= t.toLocaleDateString() + ' '+ t.toLocaleTimeString();
+							return build;
+						});
+
+						return stage;
+					});
+
+					return pipeline;
+				});
+
+				getTemplate('pipelines.html')
+					.then(function(pipelineTemplate) {
+						return getTemplate('stage.html')
+							.then(function(stageTemplate) {
+								return [pipelineTemplate, stageTemplate];
+							});
+					})
+					.then(function(templates) {
+						return getTemplate('build-summary.html')
+							.then(function(buildSummaryTemplate) {
+								templates.push(buildSummaryTemplate);
+								return templates;
+							});
+					})
+					.then(function(templates) {
+						render(templates[0], _model, {
+							stage: templates[1],
+							build: templates[2]
+						});
+					})
+					.catch(function(ex) {
+						_model.error = ex;
+
+						page.show('/login');
+					});
+			}
+		}
+	);
+};
+
+window.showBuildDetails = function(ctx) {
+	var config = {
+		region: _model.creds.region,
+		credentials: new AWS.Credentials(
+			_model.creds.accessKeyId,
+			_model.creds.secretAccessKey
+		)
+	};
+
+	AWS.config.update(config);
+
+	renderLoading();
+
+	var
+		qstr = ctx.querystring,
+		query = {},
+		a = qstr.split('&');
+
+	for (var i = 0; i < a.length; i++) {
+		var b = a[i].split('=');
+		query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
+	}
+
+	new AWS.Lambda().invoke(
+		{
+			FunctionName: _model.creds.stackName + '_sheepcd_build-details',
+			Payload: JSON.stringify(query)
+		},
+		function(err, data) {
+			if (err) {
+				renderError(err.message);
+			} else {
+				_model.build = JSON.parse(data.Payload);
+
+				if (_model.build.errorMessage) {
+					renderError(_model.build.errorMessage);
+					return;
+				}
+
+				getTemplate('build-output.html')
+					.then(function(buildOutputTemplate) {
+						return getTemplate('build-task.html')
+							.then(function(buildTaskTemplate) {
+								return [buildOutputTemplate, buildTaskTemplate];
+							});
+					})
+					.then(function(templates) {
+						render(templates[0], _model.build, {
+							task: templates[1]
+						});
+					});
+			}
+		}
+	);
+};
+
+loadCreds();
+
+page('*', function(ctx, next) {
+	if (_model.error) {
+		renderError(_model.error.message);
+		_model.error = null;
+	} else {
+		renderError()
+	};
+
+	next();
+});
+
+page("/build", showBuildDetails);
+page("/overview", showOverview);
+page("/login", showLogin);
+page("/", showLogin);
+page({
+	hashbang: true
+});
+
 	</script>
 </body>
 
