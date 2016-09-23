@@ -94,53 +94,49 @@ exports.handle = function(event, context, callback) {
 				})
 			);
 
-			if (resCode !== 0) {
-				// failed
-				callback(resCode, dirs.reports);
-			} else {
-				// if succeeded,
-				// and is not blocked file sns event
-				// to trigger next stage
-
-				let message = event;
-
-				message.eventName = 'stageFinished';
-				message.prevStage = event.stage.name;
-				delete message.stage;
-
-				return s3Util
-					.uploadDir(
-						AWS,
-						{
-							localDir: dirs.reports,
-							s3Params: {
-								Bucket: process.env.S3_ROOT,
-								Prefix: path.join(stageRoot, 'reports')
-							}
+			return s3Util
+				.uploadDir(
+					AWS,
+					{
+						localDir: dirs.reports,
+						s3Params: {
+							Bucket: process.env.S3_ROOT,
+							Prefix: path.join(stageRoot, 'reports')
 						}
-					)
-					.then(() => {
-						if (event.stage.state === 'UNBLOCKED') {
-							sns.publish(
-								{
-									TopicArn: process.env.SNS_TOPIC,
-									Message: JSON.stringify(message)
-								},
-								(err, data) => {
-									if (err) {
-										callback(err);
-									} else {
-										callback(null, dirs.reports);
-									}
+					}
+				)
+				.then(() => {
+					if (resCode !== 0) {
+						// failed
+						callback(resCode, dirs.reports);
+					} else if (event.stage.state === 'UNBLOCKED') {
+						// if succeeded,
+						// and is not blocked file sns event
+						// to trigger next stage
+
+						let message = event;
+
+						message.eventName = 'stageFinished';
+						message.prevStage = event.stage.name;
+						delete message.stage;
+
+						sns.publish(
+							{
+								TopicArn: process.env.SNS_TOPIC,
+								Message: JSON.stringify(message)
+							},
+							(err, data) => {
+								if (err) {
+									callback(err);
+								} else {
+									callback(null, dirs.reports);
 								}
-							);
-						} else {
-							callback(null, dirs.reports);
-						}
-					});
-			}
+							}
+						);
+					}
 
-			// if succeeded, and is blocked do nothing
+					// if succeeded, and is blocked do nothing
+				});
 		})
 		.catch(callback);
 };
