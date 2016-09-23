@@ -75,7 +75,6 @@ exports.handle = function(event, context, callback) {
 				},
 				(err, data) => {
 					// call executor lambda synchronously
-					let lambda = new AWS.Lambda();
 
 					console.log([
 						'Starting:', snsEvent.pipeline,
@@ -111,7 +110,11 @@ exports.handle = function(event, context, callback) {
 									if (err) {
 										reject(err);
 									} else {
-										resolve(data);
+										if (data.FunctionError) {
+											reject(JSON.parse(data.Payload));
+										} else {
+											resolve(JSON.parse(data.Payload));
+										}
 									}
 								}
 							)
