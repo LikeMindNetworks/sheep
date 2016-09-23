@@ -20,13 +20,25 @@ body {
 	position: relative;
 }
 
-.abs {
+.arrow-container {
 	position: absolute;
+	display: none;
+
+	top: 60px;
+	right: -15px;
+	width: 30px;
+	height: 40px;
+
+	cursor: pointer;
+	z-index: 100;
+}
+.green-arrow, .red-arrow {
+	display: block;
 }
 
 .arrow {
-	top: 60px;
-	right: -5px;
+	position: absolute;
+	left: 0;
 
 	width: 0;
 	height: 0;
@@ -35,17 +47,17 @@ body {
 }
 
 .arrow.shifted {
-	right: -15px;
+	left: 10px;
 }
 
-.green-arrow {
+.green-arrow .arrow {
 	border-left: 20px solid green;
 }
 
-.red-arrow {
+.red-arrow .arrow {
 	border-left: 20px solid red;
 }
-.red-arrow.shifted {
+.red-arrow .arrow.shifted {
 	border-left: 0;
 	border-right: 20px solid red;
 }
@@ -56,4 +68,8 @@ body {
 
 .status-link {
 	margin-right: 10px;
+}
+
+.pointer {
+	cursor: pointer;
 }

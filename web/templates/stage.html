@@ -11,14 +11,14 @@
 			{{#lastFive}}{{> build}}{{/lastFive}}
 		</div>
 	</div>
-	<div>
-		{{#isUnblocked}}
-		<div class="abs arrow green-arrow"></div>
-		<div class="abs arrow green-arrow shifted"></div>
-		{{/isUnblocked}}
-		{{#isBlocked}}
-		<div class="abs arrow red-arrow"></div>
-		<div class="abs arrow red-arrow shifted"></div>
-		{{/isBlocked}}
+	<div
+			class="
+				arrow-container
+				{{#isUnblocked}}green-arrow{{/isUnblocked}}
+				{{#isBlocked}}red-arrow{{/isBlocked}}
+			"
+			onclick="toggleStageState('{{repo}}','{{pipeline}}','{{name}}');">
+		<div class="arrow"></div>
+		<div class="arrow shifted"></div>
 	</div>
 </div>

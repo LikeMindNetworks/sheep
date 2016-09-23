@@ -73,7 +73,15 @@ window.renderLoading = function() {
 
 window.renderError = function(message) {
 	var html = Mustache.render(
-		'{{#message}}<div class="alert alert-danger">{{message}}</div>{{/message}}',
+		[
+			'{{#message}}',
+				'<div class="alert alert-danger">',
+					'{{message}}',
+					'<div class="pull-right pointer" ',
+						'onclick="renderError()">X</div>',
+				'</div>',
+			'{{/message}}'
+		].join(''),
 		{
 			message: message
 		}
@@ -174,6 +182,64 @@ window.login = function() {
 	page.show('/overview');
 };
 
+window.toggleStageState = function(repo, pipeline, stage) {
+	if (window.isBusy) {
+		return;
+	}
+
+	var
+		stageObj = _model.pipelineMap[pipeline].stageMap[stage],
+		curTarget = event.currentTarget,
+		oldState = stageObj.state,
+		newState = oldState === 'BLOCKED' ? 'UNBLOCKED' : 'BLOCKED';
+
+	curTarget.style.display = 'none';
+
+	if (newState === 'UNBLOCKED') {
+		var stageConfirm = window.prompt(
+			'Are you sure to unblock stage: ' + stage + '? '
+				+ '\nPlease re-type the stage name:'
+		);
+
+		if (stageConfirm !== stage) {
+			curTarget.style.display = 'inherit';
+			renderError('Mismatching stage name.');
+			return;
+		}
+	}
+
+	callLambda(
+		'update-stage-state',
+		{
+			repo: repo,
+			pipeline: pipeline,
+			stage: stage,
+			state: newState
+		}
+	).then(
+		(x) => {
+			stageObj.state = newState;
+
+			curTarget.classList.remove('green-arrow');
+			curTarget.classList.remove('red-arrow');
+
+			// reversed
+			if (oldState === 'BLOCKED') {
+				curTarget.classList.add('green-arrow');
+			} else {
+				curTarget.classList.add('red-arrow');
+			}
+
+			curTarget.style.display = 'inherit';
+		}
+	).catch(
+		(ex) => {
+			curTarget.style.display = 'inherit';
+			renderError(ex.message || ex);
+		}
+	);
+};
+
 window.showLogin = function() {
 	renderLoading();
 
@@ -197,8 +263,15 @@ window.showOverview = function() {
 
 	callLambda('overview')
 		.then(function(pipelines) {
+			_model.pipelineMap = {};
+
 			_model.pipelines = pipelines.map(function(pipeline) {
+				_model.pipelineMap[pipeline.name] = pipeline;
+
+				pipeline.stageMap = {};
 				pipeline.stages = pipeline.stages.map(function(stage, idx) {
+					pipeline.stageMap[stage.name] = stage;
+
 					stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
 					stage.isStarted = stage.lastFive[0].status === 'STARTED';
 					stage.isFailed = stage.lastFive[0].status === 'FAILED';
@@ -209,6 +282,7 @@ window.showOverview = function() {
 						stage.isBlocked = stage.state === 'BLOCKED';
 					}
 
+					stage.pipeline = pipeline.name;
 					stage.lastFive = stage.lastFive.map(function(build) {
 						build.stage = stage.name;
 						build.pipeline = pipeline.name;
