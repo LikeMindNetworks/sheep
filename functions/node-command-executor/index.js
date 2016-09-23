@@ -97,7 +97,7 @@ exports.handle = function(event, context, callback) {
 			if (resCode !== 0) {
 				// failed
 				callback(resCode, dirs.reports);
-			} else if (event.stage.state === 'UNBLOCKED') {
+			} else {
 				// if succeeded,
 				// and is not blocked file sns event
 				// to trigger next stage
@@ -119,19 +119,25 @@ exports.handle = function(event, context, callback) {
 							}
 						}
 					)
-					.then(() => sns.publish(
-						{
-							TopicArn: process.env.SNS_TOPIC,
-							Message: JSON.stringify(message)
-						},
-						(err, data) => {
-							if (err) {
-								callback(err);
-							} else {
-								callback(null, dirs.reports);
-							}
+					.then(() => {
+						if (event.stage.state === 'UNBLOCKED') {
+							sns.publish(
+								{
+									TopicArn: process.env.SNS_TOPIC,
+									Message: JSON.stringify(message)
+								},
+								(err, data) => {
+									if (err) {
+										callback(err);
+									} else {
+										callback(null, dirs.reports);
+									}
+								}
+							);
+						} else {
+							callback(null, dirs.reports);
 						}
-					));
+					});
 			}
 
 			// if succeeded, and is blocked do nothing
