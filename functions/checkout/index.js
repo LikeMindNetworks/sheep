@@ -58,7 +58,7 @@ exports.handle = function(event, context, callback) {
 			).then((pipelineConfig) => new Promise((resolve, reject) => {
 				// check out source
 
-				if (gitEvent.repository.full_name) {
+				if (downloadedRepos[gitEvent.repository.full_name]) {
 					return resolve();
 				}
 
