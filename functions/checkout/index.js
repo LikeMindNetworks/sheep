@@ -10,8 +10,12 @@ const
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
+	snsUtil = require('./lib/utils/sns-util'),
 	pathUtil = require('./lib/utils/path-util'),
+	promiseUtil = require('./lib/utils/promise-util'),
+
 	getPipelinesForRepo = require('./lib/view/get-pipelines-for-repo'),
+	getPipeline = require('./lib/view/get-pipeline'),
 
 	ARTI_PATH_PREFEX = 'sheep-artifects-';
 
@@ -19,134 +23,131 @@ exports.handle = function(event, context, callback) {
 
 	const
 		gitEvent = JSON.parse(event.Records[0].Sns.Message),
-		cwd = path.join(os.tmpdir(), ARTI_PATH_PREFEX + Date.now());
+		cwd = path.join(os.tmpdir(), ARTI_PATH_PREFEX + Date.now()),
+		downloadedRepos = {};
 
-	let req = https.request(
+	getPipelinesForRepo(
+		AWS,
 		{
-			method: 'GET',
-			hostname: 'api.github.com',
-			path: '/repos/' + gitEvent.repository.full_name + '/tarball',
-			headers: {
-				'User-Agent': 'curl/7.50.0',
-				Authorization: 'token ' + process.env.GITHUB_ACCESS_TOKEN
-			}
+			stackName: process.env.STACK_NAME
 		},
-		(res) => {
-			res.on('error', (err) => {
-				callback(err, err.message);
-			});
+		gitEvent.repository.full_name
+	)
+	.then((pipelines) => {
+		const
+			timestamp = new Date(
+				gitEvent.head_commit.timestamp
+			).getTime() + '',
+			dirname = gitEvent.repository.full_name.replace(
+				/\//g, '-'
+			) + '-' + gitEvent.after.substring(0, 7) + '/',
+			s3Path = pathUtil.getSourcePath(
+				gitEvent.repository.full_name,
+				gitEvent.after,
+				timestamp
+			);
 
-			fs.mkdirSync(cwd);
+		return promiseUtil.map(pipelines.map((pipeline) => {
 
-			const
-				foutPath = path.join(cwd, 'archive.tar.gz'),
-				fout = fs.createWriteStream(foutPath);
+			return getPipeline(
+				AWS,
+				{
+					stackName: process.env.STACK_NAME
+				},
+				pipeline
+			).then((pipelineConfig) => new Promise((resolve, reject) => {
+				// check out source
 
-			res.pipe(fout);
-
-			fout.on('finish', () => {
-				if (res.statusCode === 200) {
-					fs
-						.createReadStream(foutPath)
-						.pipe(gunzip())
-						.pipe(tar.extract(cwd))
-						.on('finish', function() {
-							const
-								timestamp = new Date(
-									gitEvent.head_commit.timestamp
-								).getTime() + '',
-								dirname = gitEvent.repository.full_name.replace(
-									/\//g, '-'
-								) + '-' + gitEvent.after.substring(0, 7) + '/',
-								s3cli = s3.createClient({
-									s3Client: new AWS.S3({})
-								}),
-								s3Path = pathUtil.getSourcePath(
-									gitEvent.repository.full_name,
-									gitEvent.after,
-									timestamp
-								),
-								uploader = s3cli.uploadDir({
-									localDir: path.join(cwd, dirname),
-									deleteRemoved: true,
-
-									s3Params: {
-										Bucket: process.env.S3_ROOT,
-										Prefix: s3Path
-									}
-								});
-
-							uploader.on('error', (err) => {
-								callback(err, err.message);
-							});
-
-							uploader.on('end', () => {
-								getPipelinesForRepo(
-									AWS,
-									{
-										stackName: process.env.STACK_NAME
-									},
-									gitEvent.repository.full_name
-								)
-								.then((pipelines) => {
-									let
-										sns = new AWS.SNS(),
-										cnt = pipelines.length;
-
-									if (!cnt) {
-										callback(
-											null, path.join(process.env.S3_ROOT, dirname)
-										);
-									}
-
-									// send sns notification
-									pipelines.map((pipeline) => {
-										sns.publish(
-											{
-												TopicArn: process.env.SNS_TOPIC,
-												Message: JSON.stringify({
-													eventName: 'checkout',
-													pipeline: pipeline,
-													timestamp: timestamp,
-													commit: gitEvent.after,
-													commitMessage: gitEvent.head_commit
-														&& gitEvent.head_commit.message
-														|| '',
-													commitUrl: gitEvent.head_commit.url,
-													author: gitEvent.head_commit
-														&& gitEvent.head_commit.author,
-													repo: gitEvent.repository.full_name,
-													s3Path: s3Path
-												})
-											},
-											(err, data) => {
-												if (err) {
-													cnt = 0;
-												}
-
-												if (--cnt <= 0) {
-													callback(err, s3Path);
-												}
-											}
-										);
-									});
-								})
-								.catch(callback);
-							});
-						});
-				} else {
-					callback(
-						res.statusCode + ' '+ res.statusMessage,
-						fs.readFileSync(foutPath).toString()
-					);
+				if (gitEvent.repository.full_name) {
+					return resolve();
 				}
-			});
-		}
-	);
 
-	req.end();
-	req.on('error', (err) => {
-		callback(err, err.message);
-	});
+				console.log(
+					'Pulling GitHub: ' + gitEvent.repository.full_name
+						+ ' token: ' + pipelineConfig.repoAccessToken.substring(0, 4)
+						+ '*****'
+				);
+
+				const req = https.request(
+					{
+						method: 'GET',
+						hostname: 'api.github.com',
+						path: '/repos/' + gitEvent.repository.full_name + '/tarball',
+						headers: {
+							'User-Agent': 'curl/7.50.0',
+							Authorization: 'token ' + pipelineConfig.repoAccessToken
+						}
+					},
+					(res) => {
+						res.on('error', reject);
+
+						fs.mkdirSync(cwd);
+
+						const
+							foutPath = path.join(cwd, 'archive.tar.gz'),
+							fout = fs.createWriteStream(foutPath);
+
+						res.pipe(fout);
+
+						fout.on('finish', () => {
+							if (res.statusCode === 200) {
+								downloadedRepos[gitEvent.repository.full_name] = true;
+
+								fs
+									.createReadStream(foutPath)
+									.pipe(gunzip())
+									.pipe(tar.extract(cwd))
+									.on('finish', function() {
+										const
+											s3cli = s3.createClient({
+												s3Client: new AWS.S3({})
+											}),
+											uploader = s3cli.uploadDir({
+												localDir: path.join(cwd, dirname),
+												deleteRemoved: true,
+
+												s3Params: {
+													Bucket: process.env.S3_ROOT,
+													Prefix: s3Path
+												}
+											});
+
+										uploader.on('error', reject);
+										uploader.on('end', resolve);
+									});
+							} else {
+								reject(res.statusCode + ' '+ res.statusMessage);
+							}
+						});
+					}
+				);
+
+				req.end();
+				req.on('error', (err) => reject);
+			})).then(() => snsUtil.publish( // send sns event
+				AWS,
+				{
+					TopicArn: process.env.SNS_TOPIC,
+					Message: JSON.stringify({
+						eventName: 'checkout',
+						pipeline: pipeline,
+						timestamp: timestamp,
+						commit: gitEvent.after,
+						commitMessage: gitEvent.head_commit
+							&& gitEvent.head_commit.message
+							|| '',
+						commitUrl: gitEvent.head_commit.url,
+						author: gitEvent.head_commit
+							&& gitEvent.head_commit.author,
+						repo: gitEvent.repository.full_name,
+						s3Path: s3Path
+					})
+				}
+			));
+
+		}));
+	})
+	.then((res) => callback(null, res))
+	.catch(callback);
 
 };

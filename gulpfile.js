@@ -199,33 +199,6 @@ gulp.task('install-lib', function() {
 		));
 });
 
-gulp.task('checkout-config', function() {
-	return gulp
-		.src('./build/functions/checkout/function.json')
-		.pipe(
-			prompt.prompt(
-				{
-					type: 'input',
-					name: 'accessToken',
-					message: 'github access token:',
-					default: cache.accessToken
-				},
-				(result) => cache.accessToken = result.accessToken
-			)
-		)
-		.pipe(transform(
-			(contents) => {
-				let fnJson = JSON.parse(contents.toString());
-
-				fnJson.environment = fnJson.environment || {};
-				fnJson.environment.GITHUB_ACCESS_TOKEN = cache.accessToken;
-
-				return JSON.stringify(fnJson, ' ', 2);
-			}
-		))
-		.pipe(gulp.dest('./build/functions/checkout'));
-});
-
 gulp.task('save-config-cache', function() {
 	fs.writeFileSync('./cache.json', JSON.stringify(cache, ' ', 2));
 });
@@ -237,7 +210,6 @@ gulp.task('default', function() {
 		'copy-functions',
 		'transform-project',
 		'transform-functions',
-		'checkout-config',
 		'install-deps', 'install-lib',
 		'save-config-cache'
 	);
