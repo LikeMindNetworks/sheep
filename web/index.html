@@ -33,7 +33,7 @@
 				<a href="./overview">Overview</a>
 			</li>
 			<li>
-				<a href="./update">Create Stage</a>
+				<a href="./update?isNew=true">Create Stage</a>
 			</li>
 		</ul>
 	</div>
@@ -55,6 +55,19 @@ window.getTemplate = function(templateName) {
 			}
 		});
 	});
+};
+
+window.parseQuery = function(qstr) {
+	var
+		query = {},
+		a = qstr.split('&');
+
+	for (var i = 0; i < a.length; i++) {
+		var b = a[i].split('=');
+		query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
+	}
+
+	return query;
 };
 
 window.render= function(template, data, partials) {
@@ -260,6 +273,20 @@ window.onDeleteStage = function(repo, pipeline, stage) {
 };
 
 window.onUpdateStage = function(repo, pipeline, stage) {
+	if (window.isBusy) {
+		return;
+	}
+
+	var
+		stageObj = _model.pipelineMap[pipeline].stageMap[stage];
+
+	_model.stageDraft = JSON.parse(JSON.stringify(stageObj));
+
+	if (_model.stageDraft.state === 'UNBLOCKED') {
+		_model.stageDraft.unblockedChecked = 'checked';
+	}
+
+	page.show('/update');
 };
 
 window.showLogin = function() {
@@ -294,6 +321,7 @@ window.showOverview = function() {
 						stage.isBlocked = stage.state === 'BLOCKED';
 					}
 
+					stage.repo = pipeline.repo;
 					stage.pipeline = pipeline.name;
 					stage.lastFive = stage.lastFive.map(function(build) {
 						build.stage = stage.name;
@@ -346,15 +374,7 @@ window.showOverview = function() {
 window.showBuildDetails = function(ctx) {
 	renderLoading();
 
-	var
-		qstr = ctx.querystring,
-		query = {},
-		a = qstr.split('&');
-
-	for (var i = 0; i < a.length; i++) {
-		var b = a[i].split('=');
-		query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
-	}
+	var query = parseQuery(ctx.querystring);
 
 	callLambda('build-details', query)
 		.then(function(build) {
@@ -379,9 +399,15 @@ window.showBuildDetails = function(ctx) {
 window.showUpdateStage = function(ctx) {
 	renderLoading();
 
+	var query = parseQuery(ctx.querystring);
+
+	_model.stageDraft = _model.stageDraft || { isNew: query.isNew };
+
+	console.log(_model.stageDraft);
+
 	getTemplate('update.html')
 		.then(function(template) {
-			render(template, _model.stageDraft = {});
+			render(template, _model.stageDraft);
 		})
 		.catch(function(ex) {
 			renderError(ex.message);

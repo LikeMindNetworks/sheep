@@ -1,8 +1,13 @@
 <div class="input-group">
 	<span class="input-group-addon">Repo:</span>
-	<input type="text" class="form-control" placeholder="<user>/<repo>">
+	<input
+		type="text"
+		class="form-control"
+		placeholder="<user>/<repo>"
+		value="{{repo}}">
 </div>
 <br/>
+{{#isNew}}
 <div class="input-group">
 	<span class="input-group-addon">Repo Access Token:</span>
 	<input
@@ -11,18 +16,28 @@
 		placeholder="access token to the repo">
 </div>
 <br/>
+{{/isNew}}
 <div class="input-group">
 	<span class="input-group-addon">Pipeline:</span>
-	<input type="text" class="form-control" placeholder="name of the pipeline">
+	<input
+		type="text"
+		class="form-control"
+		placeholder="name of the pipeline"
+		value="{{pipeline}}">
 </div>
 <br/>
 <div class="input-group">
 	<span class="input-group-addon">Stage:</span>
-	<input type="text" class="form-control" placeholder="name of the stage">
+	<input
+		type="text"
+		class="form-control"
+		placeholder="name of the stage"
+		value="{{name}}">
 </div>
 <br/>
 <div>
-	<label class="m-r-1" for="">Blocked:</label><input type="checkbox">
+	<label class="m-r-1" for="">Unblocked:</label>
+	<input type="checkbox" {{unblockedChecked}}>
 </div>
 <br/>
 <div>
