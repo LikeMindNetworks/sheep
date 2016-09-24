@@ -1,6 +1,8 @@
 <div class="input-group">
 	<span class="input-group-addon">Repo:</span>
 	<input
+		{{^isNew}}disabled{{/isNew}}
+		id="repoInput"
 		type="text"
 		class="form-control"
 		placeholder="<user>/<repo>"
@@ -11,6 +13,7 @@
 <div class="input-group">
 	<span class="input-group-addon">Repo Access Token:</span>
 	<input
+		id="repoAccessTokenInput"
 		type="password"
 		class="form-control"
 		placeholder="access token to the repo">
@@ -20,6 +23,8 @@
 <div class="input-group">
 	<span class="input-group-addon">Pipeline:</span>
 	<input
+		{{^isNew}}disabled{{/isNew}}
+		id="pipelineNameInput"
 		type="text"
 		class="form-control"
 		placeholder="name of the pipeline"
@@ -29,6 +34,8 @@
 <div class="input-group">
 	<span class="input-group-addon">Stage:</span>
 	<input
+		{{^isNew}}disabled{{/isNew}}
+		id="stageNameInput"
 		type="text"
 		class="form-control"
 		placeholder="name of the stage"
@@ -37,13 +44,15 @@
 <br/>
 <div>
 	<label class="m-r-1" for="">Unblocked:</label>
-	<input type="checkbox" {{unblockedChecked}}>
+	<input id="unblockedInput" type="checkbox" {{unblockedChecked}}>
 </div>
 <br/>
 <div>
 	<label>Variables:</label>
 	<br/>
-	<textarea class="update-variables-textarea">{}</textarea>
+	<textarea
+		id="varsInput"
+		class="update-variables-textarea">{{varsJSON}}</textarea>
 </div>
 <br/>
 <button class="btn btn-default" onclick="updateStage()">Submit</button>

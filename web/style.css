@@ -88,4 +88,5 @@ body {
 .update-variables-textarea {
 	width: 80%;
 	min-width: 600px;
+	height: 400px;
 }

@@ -199,7 +199,29 @@ window.login = function() {
 };
 
 window.updateStage = function() {
-	console.log('updateStage');
+	callLambda(
+		'update-stage',
+		{
+			repo: document.getElementById('repoInput').value,
+			pipeline: document.getElementById('pipelineNameInput').value,
+			stage: document.getElementById('stageNameInput').value,
+			state: document.getElementById('unblockedInput').checked
+				? 'UNBLOCKED' : 'BLOCKED',
+			vars: JSON.parse(document.getElementById('varsInput').value),
+			executor: 'node-command-executor',
+
+			// TODO:
+			order: 0
+		}
+	).then(
+		(data) => {
+			page.show('/overview');
+		}
+	).catch(
+		(ex) => {
+			renderError(ex.message || ex);
+		}
+	);
 };
 
 window.toggleStageState = function(repo, pipeline, stage) {
@@ -285,6 +307,8 @@ window.onUpdateStage = function(repo, pipeline, stage) {
 	if (_model.stageDraft.state === 'UNBLOCKED') {
 		_model.stageDraft.unblockedChecked = 'checked';
 	}
+
+	_model.stageDraft.varsJSON = JSON.stringify(_model.stageDraft.vars, ' ', 2);
 
 	page.show('/update');
 };
@@ -402,8 +426,6 @@ window.showUpdateStage = function(ctx) {
 	var query = parseQuery(ctx.querystring);
 
 	_model.stageDraft = _model.stageDraft || { isNew: query.isNew };
-
-	console.log(_model.stageDraft);
 
 	getTemplate('update.html')
 		.then(function(template) {
