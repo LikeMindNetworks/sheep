@@ -1,5 +1,5 @@
 {
-  "description": "buildDetails",
+  "description": "create report on the stack",
   "timeout": 300,
   "role": "arn:aws:iam::293503197324:role/placeholder",
   "dependencies": [ "s3", "rimraf" ],

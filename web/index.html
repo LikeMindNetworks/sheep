@@ -300,7 +300,7 @@ window.showLogin = function() {
 window.showOverview = function() {
 	renderLoading();
 
-	callLambda('overview')
+	callLambda('reports')
 		.then(function(pipelines) {
 			_model.pipelineMap = {};
 
@@ -376,7 +376,7 @@ window.showBuildDetails = function(ctx) {
 
 	var query = parseQuery(ctx.querystring);
 
-	callLambda('build-details', query)
+	callLambda('reports', Object.assign({ reportType: 'build-details' }, query))
 		.then(function(build) {
 			getTemplate('build-output.html')
 				.then(function(buildOutputTemplate) {

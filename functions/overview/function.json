@@ -1,8 +1,0 @@
-{
-  "description": "overview",
-  "timeout": 300,
-  "memory": 128,
-  "role": "arn:aws:iam::293503197324:role/placeholder",
-  "dependencies": [ "s3" ],
-  "lib": [ "report", "utils", "view" ]
-}
