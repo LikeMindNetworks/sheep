@@ -84,3 +84,8 @@ body {
 	cursor: pointer;
 	text-decoration: underline;
 }
+
+.update-variables-textarea {
+	width: 80%;
+	min-width: 600px;
+}

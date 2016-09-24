@@ -106,6 +106,10 @@ exports.handle = function(event, context, callback) {
 					}
 				)
 				.then(() => {
+					console.log('Result Codes = ' + resultCodes);
+					console.log('Final Code = ' + resCode);
+					console.log('Stage = ', JSON.stringify(event.stage));
+
 					if (resCode !== 0) {
 						// failed
 						callback(resCode, dirs.reports);

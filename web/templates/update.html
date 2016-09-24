@@ -1,0 +1,34 @@
+<div class="input-group">
+	<span class="input-group-addon">Repo:</span>
+	<input type="text" class="form-control" placeholder="<user>/<repo>">
+</div>
+<br/>
+<div class="input-group">
+	<span class="input-group-addon">Repo Access Token:</span>
+	<input
+		type="password"
+		class="form-control"
+		placeholder="access token to the repo">
+</div>
+<br/>
+<div class="input-group">
+	<span class="input-group-addon">Pipeline:</span>
+	<input type="text" class="form-control" placeholder="name of the pipeline">
+</div>
+<br/>
+<div class="input-group">
+	<span class="input-group-addon">Stage:</span>
+	<input type="text" class="form-control" placeholder="name of the stage">
+</div>
+<br/>
+<div>
+	<label class="m-r-1" for="">Blocked:</label><input type="checkbox">
+</div>
+<br/>
+<div>
+	<label>Variables:</label>
+	<br/>
+	<textarea class="update-variables-textarea">{}</textarea>
+</div>
+<br/>
+<button class="btn btn-default" onclick="updateStage()">Submit</button>

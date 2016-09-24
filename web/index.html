@@ -32,6 +32,9 @@
 			<li>
 				<a href="./overview">Overview</a>
 			</li>
+			<li>
+				<a href="./update">Create Stage</a>
+			</li>
 		</ul>
 	</div>
 
@@ -182,6 +185,10 @@ window.login = function() {
 	page.show('/overview');
 };
 
+window.updateStage = function() {
+	console.log('updateStage');
+};
+
 window.toggleStageState = function(repo, pipeline, stage) {
 	if (window.isBusy) {
 		return;
@@ -240,7 +247,7 @@ window.toggleStageState = function(repo, pipeline, stage) {
 	);
 };
 
-window.deleteStage = function(repo, pipeline, stage) {
+window.onDeleteStage = function(repo, pipeline, stage) {
 	var stageConfirm = window.prompt(
 		'Are you sure to delete stage: ' + stage + '? '
 			+ '\nPlease re-type the stage name:'
@@ -252,7 +259,7 @@ window.deleteStage = function(repo, pipeline, stage) {
 	}
 };
 
-window.updateStage = function(repo, pipeline, stage) {
+window.onUpdateStage = function(repo, pipeline, stage) {
 };
 
 window.showLogin = function() {
@@ -264,16 +271,6 @@ window.showLogin = function() {
 };
 
 window.showOverview = function() {
-	var config = {
-		region: _model.creds.region,
-		credentials: new AWS.Credentials(
-			_model.creds.accessKeyId,
-			_model.creds.secretAccessKey
-		)
-	};
-
-	AWS.config.update(config);
-
 	renderLoading();
 
 	callLambda('overview')
@@ -347,16 +344,6 @@ window.showOverview = function() {
 };
 
 window.showBuildDetails = function(ctx) {
-	var config = {
-		region: _model.creds.region,
-		credentials: new AWS.Credentials(
-			_model.creds.accessKeyId,
-			_model.creds.secretAccessKey
-		)
-	};
-
-	AWS.config.update(config);
-
 	renderLoading();
 
 	var
@@ -389,6 +376,18 @@ window.showBuildDetails = function(ctx) {
 		});
 };
 
+window.showUpdateStage = function(ctx) {
+	renderLoading();
+
+	getTemplate('update.html')
+		.then(function(template) {
+			render(template, _model.stageDraft = {});
+		})
+		.catch(function(ex) {
+			renderError(ex.message);
+		});
+};
+
 loadCreds();
 
 page('*', function(ctx, next) {
@@ -405,10 +404,9 @@ page('*', function(ctx, next) {
 page("/build", showBuildDetails);
 page("/overview", showOverview);
 page("/login", showLogin);
+page("/update", showUpdateStage);
 page("/", showLogin);
-page({
-	hashbang: true
-});
+page({ hashbang: true });
 
 	</script>
 </body>
