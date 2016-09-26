@@ -185,34 +185,32 @@ exports.handle = function(event, context, callback) {
 			console.log(stage);
 			console.log(error);
 
-			if (!error) {
-				if (stage.state === 'UNBLOCKED') {
-					// if succeeded,
-					// and is not blocked file sns event
-					// to trigger next stage
+			if (!error && stage.state === 'UNBLOCKED') {
+				// if succeeded,
+				// and is not blocked file sns event
+				// to trigger next stage
 
-					let message = lambdaEvent;
+				let message = lambdaEvent;
 
-					message.eventName = 'stageFinished';
-					message.prevStage = stageName;
-					delete message.stage;
+				message.eventName = 'stageFinished';
+				message.prevStage = stageName;
+				delete message.stage;
 
-					console.log(message);
+				console.log(message);
 
-					sns.publish(
-						{
-							TopicArn: process.env.SNS_TOPIC,
-							Message: JSON.stringify(message)
-						},
-						(err, data) => {
-							if (err) {
-								callback(err);
-							} else {
-								callback(null, message.eventName);
-							}
+				sns.publish(
+					{
+						TopicArn: process.env.SNS_TOPIC,
+						Message: JSON.stringify(message)
+					},
+					(err, data) => {
+						if (err) {
+							callback(err);
+						} else {
+							callback(null, message.eventName);
 						}
-					);
-				}
+					}
+				);
 			} else {
 				callback(error);
 			}
