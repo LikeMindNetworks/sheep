@@ -145,27 +145,37 @@ window.callLambda = function(functionName, payload) {
 		window.isBusy = true;
 
 		try {
-			new AWS.Lambda().invoke(
-				{
-					FunctionName: _model.creds.stackName + '_sheepcd_' + functionName,
-					Payload: JSON.stringify(payload || {})
-				},
-				function(err, data) {
-					window.isBusy = false;
+			const
+				lambda = new AWS.Lambda({apiVersion: '2015-03-31'}),
+				req = lambda.invoke(
+					{
+						FunctionName: _model.creds.stackName
+							+ '_sheepcd_'
+							+ functionName,
+						Payload: JSON.stringify(payload || {})
+					}
+				);
 
-					if (err) {
-						reject(err);
+			req.on('retry', function(response) {
+				// NEVER RETRY THIS IS CONFUSING
+				response.error.retryable = false;
+			});
+
+			req.send(function(err, data) {
+				window.isBusy = false;
+
+				if (err) {
+					reject(err);
+				} else {
+					data = JSON.parse(data.Payload);
+
+					if (data && data.errorMessage) {
+						reject(data.errorMessage);
 					} else {
-						data = JSON.parse(data.Payload);
-
-						if (data && data.errorMessage) {
-							reject(data.errorMessage);
-						} else {
-							resolve(data);
-						}
+						resolve(data);
 					}
 				}
-			);
+			});
 		} catch(ex) {
 			window.isBusy = false;
 		}

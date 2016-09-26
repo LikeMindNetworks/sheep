@@ -94,14 +94,22 @@ exports.handle = function(event, context, callback) {
 						}
 					).then(
 						() => new Promise(
-							(resolve, reject) => lambda.invoke(
-								{
-									FunctionName: process.env.STACK_NAME
-										+ '_sheepcd_'
-										+ stage.executor,
-									Payload: lambdaEvent
-								},
-								(err, data) => {
+							(resolve, reject) => {
+								const req = lambda.invoke(
+									{
+										FunctionName: process.env.STACK_NAME
+											+ '_sheepcd_'
+											+ stage.executor,
+										Payload: lambdaEvent
+									}
+								);
+
+								req.on('retry', (response) => {
+									// NEVER RETRY THIS IS CONFUSING
+									response.error.retryable = false;
+								});
+
+								req.send((err, data) => {
 									console.log([
 										'Finished:', snsEvent.pipeline,
 										stageName, snsEvent.commit, snsEvent.timestamp,
@@ -112,13 +120,17 @@ exports.handle = function(event, context, callback) {
 										reject(err);
 									} else {
 										if (data.FunctionError) {
-											reject(JSON.parse(data.Payload));
+											reject(
+												data.Payload
+													? JSON.parse(data.Payload)
+													: data
+											);
 										} else {
 											resolve(JSON.parse(data.Payload));
 										}
 									}
-								}
-							)
+								});
+							}
 						)
 					).then(
 						() => updateStageBuilds(
