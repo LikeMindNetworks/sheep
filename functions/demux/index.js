@@ -184,6 +184,8 @@ exports.handle = function(event, context, callback) {
 
 			console.log(stage);
 			console.log(error);
+			console.log(stage.state);
+			console.log(!error && stage.state === 'UNBLOCKED');
 
 			if (!error && stage.state === 'UNBLOCKED') {
 				// if succeeded,
