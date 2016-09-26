@@ -157,6 +157,7 @@ window.renderNotif = function(message, classes) {
 
 window.renderError = function(ex) {
 	window.renderNotif(ex && ex.message || ex, 'alert-danger');
+	ex && console.error(ex);
 };
 
 window.renderOK = function(message) {

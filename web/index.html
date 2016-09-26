@@ -129,6 +129,21 @@ window.updateStage = function() {
 	).catch(renderError);
 };
 
+window.deleteStage = function(repo, pipeline, stage) {
+	callLambda(
+		'remove-stage',
+		{
+			pipeline: pipeline,
+			stage: stage
+		}
+	).then(
+		(data) => {
+			page.show('/overview');
+			renderOK('Stage Removed');
+		}
+	).catch(renderError);
+};
+
 window.toggleStageState = function(repo, pipeline, stage) {
 	var
 		stageObj = _model.pipelineMap[pipeline].stageMap[stage],
@@ -227,6 +242,8 @@ window.onDeleteStage = function(repo, pipeline, stage) {
 	if (stageConfirm !== stage) {
 		renderError('Mismatching stage name.');
 		return;
+	} else {
+		deleteStage(repo, pipeline, stage);
 	}
 };
 
@@ -271,9 +288,8 @@ window.showOverview = function() {
 				pipeline.stages = pipeline.stages.map(function(stage, idx) {
 					pipeline.stageMap[stage.name] = stage;
 
-					stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
-					stage.isStarted = stage.lastFive[0].status === 'STARTED';
-					stage.isFailed = stage.lastFive[0].status === 'FAILED';
+					stage.repo = pipeline.repo;
+					stage.pipeline = pipeline.name;
 					stage.is4th = idx % 4 === 0;
 
 					if (idx < pipeline.stages.length - 1) {
@@ -281,8 +297,14 @@ window.showOverview = function() {
 						stage.isBlocked = stage.state === 'BLOCKED';
 					}
 
-					stage.repo = pipeline.repo;
-					stage.pipeline = pipeline.name;
+					if (!stage.lastFive.length) {
+						stage.isSuccessful = true;
+					} else {
+						stage.isSuccessful = stage.lastFive[0].status === 'SUCCEED';
+						stage.isStarted = stage.lastFive[0].status === 'STARTED';
+						stage.isFailed = stage.lastFive[0].status === 'FAILED';
+					}
+
 					stage.lastFive = stage.lastFive.map(function(build, idx) {
 						build.stage = stage.name;
 						build.pipeline = pipeline.name;
