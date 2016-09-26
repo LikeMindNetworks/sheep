@@ -24,13 +24,16 @@ exports.handle = function(event, context, callback) {
 	const
 		gitEvent = JSON.parse(event.Records[0].Sns.Message),
 		cwd = path.join(os.tmpdir(), ARTI_PATH_PREFEX + Date.now()),
-		downloadedRepos = {};
+		downloadedRepos = {},
+		ctx = {
+			s3Root: process.env.S3_ROOT,
+			stackName: process.env.STACK_NAME,
+			snsTopic: process.env.SNS_TOPIC
+		};
 
 	getPipelinesForRepo(
 		AWS,
-		{
-			stackName: process.env.STACK_NAME
-		},
+		ctx,
 		gitEvent.repository.full_name
 	)
 	.then((pipelines) => {
@@ -51,9 +54,7 @@ exports.handle = function(event, context, callback) {
 
 			return getPipeline(
 				AWS,
-				{
-					stackName: process.env.STACK_NAME
-				},
+				ctx,
 				pipeline
 			).then((pipelineConfig) => new Promise((resolve, reject) => {
 				// check out source

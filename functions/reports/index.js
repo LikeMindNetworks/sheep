@@ -8,13 +8,17 @@ const
 
 exports.handle = function(event, context, callback) {
 
+	const ctx = {
+		s3Root: process.env.S3_ROOT,
+		stackName: process.env.STACK_NAME,
+		snsTopic: process.env.SNS_TOPIC
+	};
+
 	switch(event.reportType) {
 		case 'build-details':
 			return buildDetails(
 				AWS,
-				{
-					stackName: process.env.STACK_NAME
-				},
+				ctx,
 				{
 					repo: event.repo,
 					pipeline: event.pipeline,
@@ -30,9 +34,7 @@ exports.handle = function(event, context, callback) {
 		default:
 			return overview(
 				AWS,
-				{
-					stackName: process.env.STACK_NAME
-				}
+				ctx
 			).then(function(data) {
 				callback(null, data)
 			}).catch(function(ex) {

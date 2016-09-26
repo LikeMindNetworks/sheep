@@ -8,11 +8,15 @@ const
 
 exports.handle = function(event, context, callback) {
 
+	const ctx = {
+		s3Root: process.env.S3_ROOT,
+		stackName: process.env.STACK_NAME,
+		snsTopic: process.env.SNS_TOPIC
+	};
+
 	updateStageState(
 		AWS,
-		{
-			stackName: process.env.STACK_NAME
-		},
+		ctx,
 		{
 			pipeline: event.pipeline,
 			stage: event.stage,
@@ -26,9 +30,7 @@ exports.handle = function(event, context, callback) {
 
 		return getLatestSuccessfulBuild(
 			AWS,
-			{
-				stackName: process.env.STACK_NAME
-			},
+			ctx,
 			event.repo,
 			event.pipeline,
 			event.stage
