@@ -182,6 +182,8 @@ exports.handle = function(event, context, callback) {
 		.then(() => {
 			// send message for next stage to run
 
+			console.log(stage);
+
 			if (!error) {
 				if (stage.state === 'UNBLOCKED') {
 					// if succeeded,
@@ -207,7 +209,6 @@ exports.handle = function(event, context, callback) {
 							}
 						}
 					);
-
 				}
 			} else {
 				callback(error);
