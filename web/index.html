@@ -38,73 +38,13 @@
 		</ul>
 	</div>
 
-	<div id="error" class=container-fixed></div>
+	<div id="notif" class=container-fixed></div>
 	<div id="view" class=container-fixed></div>
 
+	<script src="./utils.js"></script>
 	<script>
 
 var _model = {};
-
-window.getTemplate = function(templateName) {
-	return new Promise(function(resolve, reject) {
-		superagent.get('./templates/' + templateName).end(function(err, res) {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res.text);
-			}
-		});
-	});
-};
-
-window.parseQuery = function(qstr) {
-	var
-		query = {},
-		a = qstr.split('&');
-
-	for (var i = 0; i < a.length; i++) {
-		var b = a[i].split('=');
-		query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
-	}
-
-	return query;
-};
-
-window.render= function(template, data, partials) {
-	var html = Mustache.render(
-		template,
-		data,
-		partials
-	);
-
-	document.getElementById('view').innerHTML = html;
-};
-
-window.renderLoading = function() {
-	render(
-		'<div class="row row-p-b"><h2 class="col-lg-12">Loading...</h2></div>',
-		_model.creds
-	);
-};
-
-window.renderError = function(message) {
-	var html = Mustache.render(
-		[
-			'{{#message}}',
-				'<div class="alert alert-danger">',
-					'{{message}}',
-					'<div class="pull-right pointer" ',
-						'onclick="renderError()">X</div>',
-				'</div>',
-			'{{/message}}'
-		].join(''),
-		{
-			message: message
-		}
-	);
-
-	document.getElementById('error').innerHTML = html;
-};
 
 window.loadCreds = function() {
 	try {
@@ -122,64 +62,6 @@ window.loadCreds = function() {
 
 window.saveCreds = function() {
 	localStorage.creds = JSON.stringify(_model.creds);
-};
-
-window.callLambda = function(functionName, payload) {
-	var config = {
-		region: _model.creds.region,
-		credentials: new AWS.Credentials(
-			_model.creds.accessKeyId,
-			_model.creds.secretAccessKey
-		)
-	};
-
-	AWS.config.update(config);
-
-	if (window.isBusy) {
-		return new Promise(function(resolve, reject) {
-			reject(new Error('Client is Busy'));
-		});
-	}
-
-	return new Promise(function(resolve, reject) {
-		window.isBusy = true;
-
-		try {
-			const
-				lambda = new AWS.Lambda({apiVersion: '2015-03-31'}),
-				req = lambda.invoke(
-					{
-						FunctionName: _model.creds.stackName
-							+ '_sheepcd_'
-							+ functionName,
-						Payload: JSON.stringify(payload || {})
-					}
-				);
-
-			req.on('retry', function(response) {
-				// NEVER RETRY THIS IS CONFUSING
-				response.error.retryable = false;
-			});
-
-			req.send(function(err, data) {
-				window.isBusy = false;
-
-				if (err) {
-					reject(err);
-				} else {
-					data = JSON.parse(data.Payload);
-
-					if (data && data.errorMessage) {
-						reject(data.errorMessage);
-					} else {
-						resolve(data);
-					}
-				}
-			});
-		} catch(ex) {
-			window.isBusy = false;
-		}
-	});
 };
 
 window.login = function() {
@@ -209,36 +91,45 @@ window.login = function() {
 };
 
 window.updateStage = function() {
+	let varsJSON;
+
+	try {
+		varsJSON = JSON.parse(document.getElementById('varsInput').value);
+	} catch(ex) {
+		return renderError(ex);
+	}
+
+	let params = {
+		repo: document.getElementById('repoInput').value,
+		pipeline: document.getElementById('pipelineNameInput').value,
+		stage: document.getElementById('stageNameInput').value,
+		state: document.getElementById('unblockedInput').checked
+			? 'UNBLOCKED' : 'BLOCKED',
+		vars: varsJSON,
+		executor: 'command-executor',
+
+		// TODO:
+		order: 0
+	};
+
+	if (document.getElementById('repoAccessTokenInput').value) {
+		params.repoAccessToken = document.getElementById(
+			'repoAccessTokenInput'
+		).value;
+	}
+
 	callLambda(
 		'update-stage',
-		{
-			repo: document.getElementById('repoInput').value,
-			pipeline: document.getElementById('pipelineNameInput').value,
-			stage: document.getElementById('stageNameInput').value,
-			state: document.getElementById('unblockedInput').checked
-				? 'UNBLOCKED' : 'BLOCKED',
-			vars: JSON.parse(document.getElementById('varsInput').value),
-			executor: 'command-executor',
-
-			// TODO:
-			order: 0
-		}
+		params
 	).then(
 		(data) => {
 			page.show('/overview');
+			renderOK('Stage Updated');
 		}
-	).catch(
-		(ex) => {
-			renderError(ex.message || ex);
-		}
-	);
+	).catch(renderError);
 };
 
 window.toggleStageState = function(repo, pipeline, stage) {
-	if (window.isBusy) {
-		return;
-	}
-
 	var
 		stageObj = _model.pipelineMap[pipeline].stageMap[stage],
 		curTarget = event.currentTarget,
@@ -287,7 +178,7 @@ window.toggleStageState = function(repo, pipeline, stage) {
 	).catch(
 		function(ex) {
 			curTarget.style.display = 'inherit';
-			renderError(ex.message || ex);
+			renderError(ex);
 		}
 	);
 };
@@ -418,30 +309,16 @@ window.showOverview = function() {
 				return pipeline;
 			});
 
-			return getTemplate('pipelines.html')
-				.then(function(pipelineTemplate) {
-					return getTemplate('stage.html')
-						.then(function(stageTemplate) {
-							return [pipelineTemplate, stageTemplate];
-						});
-				})
-				.then(function(templates) {
-					return getTemplate('build-summary.html')
-						.then(function(buildSummaryTemplate) {
-							templates.push(buildSummaryTemplate);
-							return templates;
-						});
-				})
-				.then(function(templates) {
-					render(templates[0], _model, {
-						stage: templates[1],
-						build: templates[2]
-					});
+			return getTemplates(
+				['pipelines.html', 'stage.html', 'build-summary.html']
+			).then(function(templates) {
+				render(templates[0], _model, {
+					stage: templates[1],
+					build: templates[2]
 				});
+			});
 		})
-		.catch(function(ex) {
-			renderError(ex.message || ex);
-		});
+		.catch(renderError);
 };
 
 window.showBuildDetails = function(ctx) {
@@ -451,22 +328,14 @@ window.showBuildDetails = function(ctx) {
 
 	callLambda('reports', Object.assign({ reportType: 'build-details' }, query))
 		.then(function(build) {
-			getTemplate('build-output.html')
-				.then(function(buildOutputTemplate) {
-					return getTemplate('build-task.html')
-						.then(function(buildTaskTemplate) {
-							return [buildOutputTemplate, buildTaskTemplate];
-						});
-				})
+			return getTemplates(['build-output.html', 'build-task.html'])
 				.then(function(templates) {
 					render(templates[0], _model.build = build, {
 						task: templates[1]
 					});
 				});
 		})
-		.catch(function(ex) {
-			renderError(ex.message || ex);
-		});
+		.catch(renderError);
 };
 
 window.showUpdateStage = function(ctx) {
@@ -474,22 +343,22 @@ window.showUpdateStage = function(ctx) {
 
 	var query = parseQuery(ctx.querystring);
 
-	_model.stageDraft = _model.stageDraft || { isNew: query.isNew };
+	_model.stageDraft = query.isNew
+		? { isNew: query.isNew }
+		: _model.stageDraft;
 
 	getTemplate('update.html')
 		.then(function(template) {
 			render(template, _model.stageDraft);
 		})
-		.catch(function(ex) {
-			renderError(ex.message);
-		});
+		.catch(renderError);
 };
 
 loadCreds();
 
 page('*', function(ctx, next) {
 	if (_model.error) {
-		renderError(_model.error.message);
+		renderError(_model.error);
 		_model.error = null;
 	} else {
 		renderError();
