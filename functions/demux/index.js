@@ -127,7 +127,9 @@ exports.handle = function(event, context, callback) {
 
 				req.on('retry', (response) => {
 					// NEVER RETRY THIS IS CONFUSING
+					console.log('Prevent Retry');
 					response.error.retryable = false;
+					response.error.redirect = false;
 				});
 
 				req.send((err, data) => {
