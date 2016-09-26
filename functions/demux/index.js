@@ -53,7 +53,7 @@ exports.handle = function(event, context, callback) {
 			stage = pipeline.stages[stageName];
 
 			if (!stage) {
-				throw new Error('unknown stage: ' + stageName));
+				throw new Error('unknown stage: ' + stageName);
 			}
 		})
 		.then(() => {
