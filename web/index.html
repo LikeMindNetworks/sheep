@@ -465,7 +465,7 @@ window.showBuildDetails = function(ctx) {
 				});
 		})
 		.catch(function(ex) {
-			renderError(ex.message);
+			renderError(ex.message || ex);
 		});
 };
 

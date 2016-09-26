@@ -89,7 +89,7 @@ exports.handle = function(event, context, callback) {
 				}
 			};
 
-			return run();
+			return run().catch((ex) => ex);
 		})
 		.then((resCode) => {
 			const report = JSON.stringify({
