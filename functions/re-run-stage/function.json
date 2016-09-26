@@ -1,0 +1,7 @@
+{
+  "description": "try to re-run a stage's latest failed build",
+  "timeout": 300,
+  "role": "arn:aws:iam::293503197324:role/placeholder",
+  "dependencies": [],
+  "lib": [ "utils", "manage" ]
+}

@@ -89,7 +89,8 @@ exports.handle = function(event, context, callback) {
 							stage: stageName,
 							commit: snsEvent.commit,
 							timestamp: snsEvent.timestamp,
-							status: 'STARTED'
+							status: 'STARTED',
+							reRun: snsEvent.reRun || false
 						}
 					).then(
 						() => new Promise(

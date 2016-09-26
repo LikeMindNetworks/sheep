@@ -35,6 +35,14 @@
 			Details
 		</a>
 		{{/isFailed}}
+		{{#canRetry}}
+		<a
+			class="pull-right m-r-1"
+			href="javascript:void(0)"
+			onclick="reRunStage('{{repo}}', '{{pipeline}}', '{{stage}}', '{{commit}}', {{commitTimestamp}})">
+			Retry
+		</a>
+		{{/canRetry}}
 	</div>
 	<div class="commit-message">
 		<span>{{commitMessage}}</span>

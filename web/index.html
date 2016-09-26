@@ -259,7 +259,7 @@ window.toggleStageState = function(repo, pipeline, stage) {
 			state: newState
 		}
 	).then(
-		(x) => {
+		function(x) {
 			stageObj.state = newState;
 
 			curTarget.classList.remove('green-arrow');
@@ -275,11 +275,46 @@ window.toggleStageState = function(repo, pipeline, stage) {
 			curTarget.style.display = 'inherit';
 		}
 	).catch(
-		(ex) => {
+		function(ex) {
 			curTarget.style.display = 'inherit';
 			renderError(ex.message || ex);
 		}
 	);
+};
+
+window.reRunStage = function(repo, pipeline, stage, commit, commitTimestamp) {
+	var stageConfirm = window.prompt(
+		'WARNING: Stage Actions are not always idempotent!'
+			+ 'Are you sure to re-run stage: ' + stage + '? '
+			+ '\nPlease re-type the stage name:'
+	);
+
+	if (stageConfirm !== stage) {
+		renderError('Mismatching stage name.');
+		return;
+	}
+
+	var curTarget = event.currentTarget;
+
+	callLambda(
+		're-run-stage',
+		{
+			repo: repo,
+			pipeline: pipeline,
+			stage: stage,
+			commit: commit,
+			commitTimestamp: commitTimestamp
+		}
+	).then(
+		function() {
+			curTarget.textContent = 'OK. Click To Refresh.';
+			curTarget.onclick = function() { location.reload(); };
+		}
+	).catch(
+		function(ex) {
+			renderError(ex.message || ex);
+		}
+	)
 };
 
 window.onDeleteStage = function(repo, pipeline, stage) {
@@ -347,7 +382,7 @@ window.showOverview = function() {
 
 					stage.repo = pipeline.repo;
 					stage.pipeline = pipeline.name;
-					stage.lastFive = stage.lastFive.map(function(build) {
+					stage.lastFive = stage.lastFive.map(function(build, idx) {
 						build.stage = stage.name;
 						build.pipeline = pipeline.name;
 						build.repo = pipeline.repo;
@@ -356,6 +391,10 @@ window.showOverview = function() {
 						build.isStarted = build.status === 'STARTED';
 						build.isFailed = build.status === 'FAILED';
 						build.commitShort = build.commit.substring(0, 7);
+
+						if (idx === 0 && build.isFailed) {
+							build.canRetry = true;
+						}
 
 						var t = new Date(build.commitTimestamp);
 						build.commitTime
