@@ -430,7 +430,7 @@ window.showOverview = function() {
 				});
 		})
 		.catch(function(ex) {
-			renderError(ex.message);
+			renderError(ex.message || ex);
 		});
 };
 
@@ -482,7 +482,7 @@ page('*', function(ctx, next) {
 		renderError(_model.error.message);
 		_model.error = null;
 	} else {
-		renderError()
+		renderError();
 	};
 
 	next();
