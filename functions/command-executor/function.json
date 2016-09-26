@@ -1,5 +1,5 @@
 {
-  "description": "nodeCommandExecutor",
+  "description": "command executor",
   "timeout": 300,
   "memory": 512,
   "role": "arn:aws:iam::293503197324:role/placeholder",

@@ -5,10 +5,12 @@ const
 	fs = require('fs'),
 	s3 = require('s3'),
 	path = require('path'),
-	childProcess = require('child_process'),
 
 	runCommand = require('./lib/executor/run-command'),
 	setupExecDir = require('./lib/executor/setup-execution-directory'),
+	ExecutionFailedError = require(
+		'./lib/executor/execution-error'
+	).ExecutionFailedError,
 
 	pathUtil = require('./lib/utils/path-util'),
 	s3Util = require('./lib/utils/s3-util');
@@ -90,13 +92,12 @@ exports.handle = function(event, context, callback) {
 			return run();
 		})
 		.then((resCode) => {
-			fs.writeFileSync(
-				path.join(dirs.reports, 'result.json'),
-				JSON.stringify({
-					tasks: event.stage.vars.cmds,
-					resultCodes: resultCodes
-				})
-			);
+			const report = JSON.stringify({
+				tasks: event.stage.vars.cmds,
+				resultCodes: resultCodes
+			});
+
+			fs.writeFileSync(path.join(dirs.reports, 'result.json'), report);
 
 			return s3Util
 				.uploadDir(
@@ -115,38 +116,17 @@ exports.handle = function(event, context, callback) {
 					console.log('Stage = ', JSON.stringify(event.stage));
 
 					if (resCode !== 0) {
-						// failed
-						callback(resCode, dirs.reports);
-					} else if (event.stage.state === 'UNBLOCKED') {
-						// if succeeded,
-						// and is not blocked file sns event
-						// to trigger next stage
-
-						let message = event;
-
-						message.eventName = 'stageFinished';
-						message.prevStage = event.stage.name;
-						delete message.stage;
-
-						sns.publish(
-							{
-								TopicArn: process.env.SNS_TOPIC,
-								Message: JSON.stringify(message)
-							},
-							(err, data) => {
-								if (err) {
-									callback(err);
-								} else {
-									callback(null, dirs.reports);
-								}
-							}
+						throw new ExecutionFailedError(
+							event.stage.vars.cmds.join(';'),
+							resCode
 						);
 					} else {
-						callback(null);
+						return report;
 					}
-
-					// if succeeded, and is blocked do nothing
 				});
+		})
+		.then((report) => {
+			callback(null, report);
 		})
 		.catch(callback);
 };

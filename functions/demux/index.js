@@ -18,13 +18,20 @@ exports.handle = function(event, context, callback) {
 		lambda = new AWS.Lambda({apiVersion: '2015-03-31'}),
 		snsEvent = JSON.parse(event.Records[0].Sns.Message);
 
+	let
+		stageName,
+		stage,
+		lambdaEvent,
+		status = 'STARTED',
+		error;
+
 	getPipeline(
 			AWS,
 			{ stackName: process.env.STACK_NAME },
 			snsEvent.pipeline
 		)
 		.then((pipeline) => {
-			let stageName, stage;
+			// select the stage
 
 			if (snsEvent.prevStage) {
 				for (let i = 0; i < pipeline.stageOrder.length; ++i) {
@@ -32,7 +39,7 @@ exports.handle = function(event, context, callback) {
 
 						if (i === pipeline.stageOrder.length - 1) {
 							// no more stages
-							return callback(null, {});
+							throw { noMoreStage: true };
 						} else {
 							stageName = pipeline.stageOrder[i + 1];
 							break;
@@ -46,18 +53,20 @@ exports.handle = function(event, context, callback) {
 			stage = pipeline.stages[stageName];
 
 			if (!stage) {
-				return callback(new Error('unknown stage: ' + stageName));
+				throw new Error('unknown stage: ' + stageName));
 			}
+		})
+		.then(() => {
+			// store the stage config used to ran this task
 
-			const lambdaEvent = JSON.stringify(Object.assign(
+			lambdaEvent = JSON.stringify(Object.assign(
 				snsEvent,
 				{
 					stage: stage
 				}
 			));
 
-			// store the stage config used to ran this task
-			s3.putObject(
+			return new Promise((resolve, reject) => s3.putObject(
 				{
 					Bucket: process.env.S3_ROOT,
 					Key: [
@@ -74,102 +83,136 @@ exports.handle = function(event, context, callback) {
 					ContentType: 'application/json'
 				},
 				(err, data) => {
-					// call executor lambda synchronously
+					if (err) {
+						reject(err);
+					} else {
+						resolve(data);
+					}
+				}
+			));
+		})
+		.then(() => {
+			// starting
 
-					console.log([
-						'Starting:', snsEvent.pipeline,
-						stageName, snsEvent.commit, snsEvent.timestamp
-					].join(' '));
+			console.log([
+				'Starting:', snsEvent.pipeline,
+				stageName, snsEvent.commit, snsEvent.timestamp
+			].join(' '));
 
-					updateStageBuilds(
-						AWS,
-						{ stackName: process.env.STACK_NAME },
-						{
-							pipeline: snsEvent.pipeline,
-							stage: stageName,
-							commit: snsEvent.commit,
-							timestamp: snsEvent.timestamp,
-							status: 'STARTED',
-							reRun: snsEvent.reRun || false
-						}
-					).then(
-						() => new Promise(
-							(resolve, reject) => {
-								const req = lambda.invoke(
-									{
-										FunctionName: process.env.STACK_NAME
-											+ '_sheepcd_'
-											+ stage.executor,
-										Payload: lambdaEvent
-									}
-								);
-
-								req.on('retry', (response) => {
-									// NEVER RETRY THIS IS CONFUSING
-									response.error.retryable = false;
-								});
-
-								req.send((err, data) => {
-									console.log([
-										'Finished:', snsEvent.pipeline,
-										stageName, snsEvent.commit, snsEvent.timestamp,
-										err ? err.message : ''
-									].join(' '));
-
-									if (err) {
-										reject(err);
-									} else {
-										if (data.FunctionError) {
-											reject(
-												data.Payload
-													? JSON.parse(data.Payload)
-													: data
-											);
-										} else {
-											resolve(JSON.parse(data.Payload));
-										}
-									}
-								});
-							}
-						)
-					).then(
-						() => updateStageBuilds(
-							AWS,
-							{ stackName: process.env.STACK_NAME },
-							{
-								pipeline: snsEvent.pipeline,
-								stage: stageName,
-								commit: snsEvent.commit,
-								timestamp: snsEvent.timestamp,
-								status: 'SUCCEED'
-							}
-						)
-					).then(
-						() => callback(null)
-					).catch(
-						(ex) => {
-							console.log(ex);
-
-							if (ex instanceof ReOldBuildRunError) {
-								callback(null);
-							} else {
-								return updateStageBuilds(
-									AWS,
-									{ stackName: process.env.STACK_NAME },
-									{
-										pipeline: snsEvent.pipeline,
-										stage: stageName,
-										commit: snsEvent.commit,
-										timestamp: snsEvent.timestamp,
-										status: 'FAILED'
-									}
-								).catch((ex) => ex).then(callback);
-							}
-						}
-					);
+			return updateStageBuilds(
+				AWS,
+				{ stackName: process.env.STACK_NAME },
+				{
+					pipeline: snsEvent.pipeline,
+					stage: stageName,
+					commit: snsEvent.commit,
+					timestamp: snsEvent.timestamp,
+					status: status,
+					reRun: snsEvent.reRun || false
 				}
 			);
 		})
-		.catch(callback);
+		.then(() => {
+			// call executor lambda synchronously
+
+			return new Promise((resolve, reject) => {
+				const req = lambda.invoke(
+					{
+						FunctionName: process.env.STACK_NAME
+							+ '_sheepcd_'
+							+ stage.executor,
+						Payload: lambdaEvent
+					}
+				);
+
+				req.on('retry', (response) => {
+					// NEVER RETRY THIS IS CONFUSING
+					response.error.retryable = false;
+				});
+
+				req.send((err, data) => {
+					console.log([
+						'Finished:', snsEvent.pipeline,
+						stageName, snsEvent.commit, snsEvent.timestamp,
+						err ? err.message : ''
+					].join(' '));
+
+					if (err) {
+						reject(err);
+					} else {
+						if (data.FunctionError) {
+							reject(
+								data.Payload
+									? JSON.parse(data.Payload)
+									: data
+							);
+						} else {
+							resolve(JSON.parse(data.Payload));
+						}
+					}
+				});
+			});
+		})
+		.then(() => {
+			// execution successful
+			status = 'SUCCEED';
+		})
+		.catch((ex) => {
+			// execution failed
+
+			if (ex.noMoreStage || ex instanceof ReOldBuildRunError) {
+				status = 'SUCCEED';
+			} else {
+				status = 'FAILED';
+			}
+
+			error = ex;
+		})
+		.then(() => updateStageBuilds(
+			AWS,
+			{ stackName: process.env.STACK_NAME },
+			{
+				pipeline: snsEvent.pipeline,
+				stage: stageName,
+				commit: snsEvent.commit,
+				timestamp: snsEvent.timestamp,
+				status: status
+			}
+		))
+		.then(() => {
+			// send message for next stage to run
+
+			if (!error) {
+				if (stage.state === 'UNBLOCKED') {
+					// if succeeded,
+					// and is not blocked file sns event
+					// to trigger next stage
+
+					let message = lambdaEvent;
+
+					message.eventName = 'stageFinished';
+					message.prevStage = stageName;
+					delete message.stage;
+
+					sns.publish(
+						{
+							TopicArn: process.env.SNS_TOPIC,
+							Message: JSON.stringify(message)
+						},
+						(err, data) => {
+							if (err) {
+								callback(err);
+							} else {
+								callback(null, message.eventName);
+							}
+						}
+					);
+
+				}
+			} else {
+				callback(error);
+			}
+
+		});
 
 };
