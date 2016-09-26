@@ -66,18 +66,18 @@ exports.handle = function(event, context, callback) {
 				}
 			}
 		))
-		.then(() => {
-			// prepare for running npm
-			console.log('set npm cache: ' + dirs.npmCacheDir);
+		// .then(() => {
+		// 	// prepare for running npm
+		// 	console.log('set npm cache: ' + dirs.npmCacheDir);
 
-			childProcess.execSync(
-				'npm config set cache ' + dirs.npmCacheDir,
-				{
-					cwd: dirs.src,
-					env: process.env
-				}
-			);
-		})
+		// 	childProcess.execSync(
+		// 		'npm config set cache ' + dirs.npmCacheDir,
+		// 		{
+		// 			cwd: dirs.src,
+		// 			env: process.env
+		// 		}
+		// 	);
+		// })
 		.then(() => {
 			let run = () => {
 				let cmdline = cmds.shift();
