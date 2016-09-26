@@ -183,6 +183,7 @@ exports.handle = function(event, context, callback) {
 			// send message for next stage to run
 
 			console.log(stage);
+			console.log(error);
 
 			if (!error) {
 				if (stage.state === 'UNBLOCKED') {
@@ -195,6 +196,8 @@ exports.handle = function(event, context, callback) {
 					message.eventName = 'stageFinished';
 					message.prevStage = stageName;
 					delete message.stage;
+
+					console.log(message);
 
 					sns.publish(
 						{
