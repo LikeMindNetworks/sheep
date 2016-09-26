@@ -24,8 +24,6 @@ gulp.task('clean', function() {
 });
 
 gulp.task('prompt', function() {
-	var mem = cache.mem || require('./project.json').memory;
-
 	return gulp
 		.src('package.json')
 		.pipe(
@@ -58,19 +56,6 @@ gulp.task('prompt', function() {
 			prompt.prompt(
 				{
 					type: 'input',
-					name: 'mem',
-					message: 'Sheep C/D executor lambda memory size:',
-					default: mem
-				},
-				(result) => {
-					cache.mem = result.mem;
-				}
-			)
-		)
-		.pipe(
-			prompt.prompt(
-				{
-					type: 'input',
 					name: 'snsTopic',
 					message: 'Sheep C/D SNS topic arn',
 					default: cache.snsTopic
@@ -89,8 +74,6 @@ gulp.task('copy-functions', function() {
 });
 
 gulp.task('transform-functions', function() {
-		var mem = require('./project.json').memory;
-
 		return gulp
 			.src('./build/**/function.json')
 			.pipe(transform(
@@ -98,7 +81,6 @@ gulp.task('transform-functions', function() {
 					let fnJson = JSON.parse(contents.toString());
 
 					fnJson.role = cache.executorRole;
-					fnJson.memory = mem;
 
 					fnJson.environment = fnJson.environment || {};
 					fnJson.environment.STACK_NAME = cache.stackName;

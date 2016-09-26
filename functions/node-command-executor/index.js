@@ -30,6 +30,8 @@ exports.handle = function(event, context, callback) {
 		return callback(new Error('No command(cmds) to run'));
 	}
 
+	console.log('Commit = ' + event.commit);
+
 	let
 		dirs,
 		i = 0,
@@ -41,6 +43,8 @@ exports.handle = function(event, context, callback) {
 			event.commit,
 			event.reRun
 		);
+
+		console.log('Dirs = ', JSON.stringify(dirs));
 	} catch(ex) {
 		return callback(ex);
 	}
@@ -137,6 +141,8 @@ exports.handle = function(event, context, callback) {
 								}
 							}
 						);
+					} else {
+						callback(null);
 					}
 
 					// if succeeded, and is blocked do nothing
