@@ -59,7 +59,7 @@ exports.handle = function(event, context, callback) {
 			).then((pipelineConfig) => new Promise((resolve, reject) => {
 				// check out source
 
-				if (gitEvent.ref !== pipeline.gitRef) {
+				if (gitEvent.ref !== pipelineConfig.gitRef) {
 					return resolve(false);
 				}
 
