@@ -9,7 +9,8 @@ const
 	runSequence = require('gulp-run-sequence'),
 	fs = require('fs'),
 	path = require('path'),
-	childProcess = require('child_process');
+	childProcess = require('child_process'),
+	es = require('event-stream');
 
 var cache;
 
@@ -74,30 +75,31 @@ gulp.task('copy-functions', function() {
 });
 
 gulp.task('sizing-executors', function() {
-	gulp
-		.src('./build/functions/command-executor/**/*')
-		.pipe(gulp.dest('build/functions/command-executor-small'));
+	const sizer = (size) => (contents, file) => {
+		if (/function\.json$/.test(file.path)) {
+			let fnJson = JSON.parse(contents.toString());
+			fnJson.memory = size;
+			return JSON.stringify(fnJson, ' ', 2);
+		} else {
+			return contents
+		}
+	};
 
-	gulp
-		.src('./build/functions/command-executor/**/*')
-		.pipe(gulp.dest('build/functions/command-executor-medium'));
-
-	gulp
-		.src('./build/functions/command-executor/**/*')
-		.pipe(gulp.dest('build/functions/command-executor-large'));
-
-	gulp.src('./build/functions/command-executor').pipe(rm());
-
-	gulp
-		.src(
-			'./build/functions/command-executor-(small|medium|large)/function.json'
-		)
-		.pipe(transform(
-			(contents) => {
-				console.log(contents);
-			}
-		))
-		.pipe(gulp.dest('./build'));
+	return es.concat(
+		gulp
+			.src('./build/functions/command-executor/**/*')
+			.pipe(transform(sizer(256)))
+			.pipe(gulp.dest('build/functions/command-executor-small')),
+		gulp
+			.src('./build/functions/command-executor/**/*')
+			.pipe(transform(sizer(1024)))
+			.pipe(gulp.dest('build/functions/command-executor-medium')),
+		gulp
+			.src('./build/functions/command-executor/**/*')
+			.pipe(transform(sizer(1536)))
+			.pipe(gulp.dest('build/functions/command-executor-large')),
+		gulp.src('./build/functions/command-executor').pipe(rm())
+	);
 });
 
 gulp.task('transform-functions', function() {
