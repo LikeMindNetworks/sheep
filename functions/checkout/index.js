@@ -41,9 +41,6 @@ exports.handle = function(event, context, callback) {
 			timestamp = new Date(
 				gitEvent.head_commit.timestamp
 			).getTime() + '',
-			dirname = gitEvent.repository.full_name.replace(
-				/\//g, '-'
-			) + '-' + gitEvent.after.substring(0, 7) + '/',
 			s3Path = pathUtil.getSourcePath(
 				gitEvent.repository.full_name,
 				gitEvent.after,
@@ -78,7 +75,10 @@ exports.handle = function(event, context, callback) {
 					{
 						method: 'GET',
 						hostname: 'api.github.com',
-						path: '/repos/' + gitEvent.repository.full_name + '/tarball',
+						path: '/repos/'
+							+ gitEvent.repository.full_name
+							+ '/tarball/'
+							+ gitEvent.after,
 						headers: {
 							'User-Agent': 'curl/7.50.0',
 							Authorization: 'token ' + pipelineConfig.repoAccessToken
@@ -104,12 +104,28 @@ exports.handle = function(event, context, callback) {
 									.pipe(gunzip())
 									.pipe(tar.extract(cwd))
 									.on('finish', function() {
+										// check for existence of un-tar-ed src
+										// TODO: this is uglu, just use git binary
+										// and deploy key in the future
+
+										let dir;
+
+										try {
+											dir = fs
+												.readdirSync(cwd)
+												.filter((d) => d !== 'archive.tar.gz')[0];
+
+											console.log('Folder to be uploaded: ' + dir);
+										} catch(ex) {
+											return reject(ex);
+										}
+
 										const
 											s3cli = s3.createClient({
 												s3Client: new AWS.S3({})
 											}),
 											uploader = s3cli.uploadDir({
-												localDir: path.join(cwd, dirname),
+												localDir: path.join(cwd, dir),
 												deleteRemoved: true,
 
 												s3Params: {
