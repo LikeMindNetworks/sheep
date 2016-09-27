@@ -2,15 +2,19 @@
 
 const
 	AWS = require('aws-sdk'),
-	fs = require('fs'),
-	s3 = require('s3'),
-	path = require('path'),
 
-	runCommand = require('./lib/executor/run-command'),
-	setupExecDir = require('./lib/executor/setup-execution-directory'),
-
-	pathUtil = require('./lib/utils/path-util'),
-	s3Util = require('./lib/utils/s3-util');
+	npmInstallExec = require('./lib/executor/npm-install-executor');
 
 exports.handle = function(event, context, callback) {
+	npmInstallExec(
+		AWS,
+		{
+			s3Root: process.env.S3_ROOT,
+			stackName: process.env.STACK_NAME,
+			snsTopic: process.env.SNS_TOPIC
+		},
+		event
+	)
+		.then((report) => callback(null, report))
+		.catch(callback)
 };

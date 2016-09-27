@@ -44,7 +44,12 @@
 	<script src="./utils.js"></script>
 	<script>
 
-var _model = {};
+var
+	_model = {},
+	EXECUTORS = [
+		'command-executor',
+		'npm-install-executor'
+	];
 
 window.loadCreds = function() {
 	try {
@@ -106,13 +111,16 @@ window.updateStage = function() {
 		state: document.getElementById('unblockedInput').checked
 			? 'UNBLOCKED' : 'BLOCKED',
 		vars: varsJSON,
-		executor: 'command-executor',
+		executor: document.getElementById('executorInput').value,
 
 		// TODO:
 		order: 0
 	};
 
-	if (document.getElementById('repoAccessTokenInput').value) {
+	if (
+		document.getElementById('repoAccessTokenInput')
+			&& document.getElementById('repoAccessTokenInput').value
+	) {
 		params.repoAccessToken = document.getElementById(
 			'repoAccessTokenInput'
 		).value;
@@ -365,9 +373,17 @@ window.showUpdateStage = function(ctx) {
 
 	var query = parseQuery(ctx.querystring);
 
-	_model.stageDraft = query.isNew
-		? { isNew: query.isNew }
+	_model.stageDraft = (query.isNew || !_model.stageDraft)
+		? {
+			isNew: query.isNew,
+			executor: EXECUTORS[0]
+		}
 		: _model.stageDraft;
+
+	_model.stageDraft.EXECUTORS = EXECUTORS;
+	_model.stageDraft.selectedExecutor = function() {
+		return this == _model.stageDraft.executor ? 'selected' : ''
+	};
 
 	getTemplate('update.html')
 		.then(function(template) {

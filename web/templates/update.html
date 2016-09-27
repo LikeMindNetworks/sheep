@@ -48,6 +48,14 @@
 </div>
 <br/>
 <div>
+	<select id="executorInput">
+		{{#EXECUTORS}}
+		<option value="{{.}}" {{selectedExecutor}}>{{.}}</option>
+		{{/EXECUTORS}}
+	</select>
+</div>
+<br/>
+<div>
 	<label>Variables:</label>
 	<br/>
 	<textarea
