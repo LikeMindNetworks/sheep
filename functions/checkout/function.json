@@ -3,7 +3,7 @@
   "timeout": 300,
   "role": "arn:aws:iam::293503197324:role/placeholder",
   "dependencies": [
-    "follow-redirects", "tar-fs", "gunzip-maybe", "s3"
+    "follow-redirects", "tar-fs", "gunzip-maybe", "s3", "glob"
   ],
   "lib": [ "view", "utils" ],
   "memory": 256
