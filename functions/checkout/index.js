@@ -6,10 +6,10 @@ const
 	os = require('os'),
 	path = require('path'),
 	tar = require('tar-fs'),
-	s3 = require('s3'),
 	gunzip = require('gunzip-maybe'),
 	https = require('follow-redirects').https,
 
+	s3Util = require('./lib/utils/s3-util'),
 	snsUtil = require('./lib/utils/sns-util'),
 	pathUtil = require('./lib/utils/path-util'),
 	promiseUtil = require('./lib/utils/promise-util'),
@@ -108,47 +108,38 @@ exports.handle = function(event, context, callback) {
 
 								unpack.on('error', reject);
 
-								unpack.on('finish', function() {
-										// check for existence of un-tar-ed src
-										// TODO: this is uglu, just use git binary
-										// and deploy key in the future
+								unpack.on('finish', () => {
+									// check for existence of un-tar-ed src
+									// TODO: this is uglu, just use git binary
+									// and deploy key in the future
 
-										let dir;
+									let dir;
 
-										try {
-											dir = fs
-												.readdirSync(cwd)
-												.filter((d) => d !== 'archive.tar.gz')[0];
+									try {
+										dir = fs
+											.readdirSync(cwd)
+											.filter((d) => d !== 'archive.tar.gz')[0];
 
-											console.log('Folder to be uploaded: ' + dir);
-										} catch(ex) {
-											return reject(ex);
-										}
+										console.log('Folder to be uploaded: ' + dir);
+									} catch(ex) {
+										return reject(ex);
+									}
 
-										const
-											s3cli = s3.createClient({
-												s3Client: new AWS.S3({})
-											}),
-											uploader = s3cli.uploadDir({
+									s3Util
+										.uploadDir(
+											AWS,
+											{
 												localDir: path.join(cwd, dir),
 
 												s3Params: {
 													Bucket: process.env.S3_ROOT,
 													Prefix: s3Path
 												}
-											});
-
-										uploader.on('error', reject);
-										uploader.on('progress', () => {
-											console.log(
-												'progress',
-												uploader.progressMd5Amount,
-												uploader.progressAmount,
-												uploader.progressTotal
-											);
-										});
-										uploader.on('end', () => resolve(true));
-									});
+											}
+										)
+										.then(resolve)
+										.catch(reject);
+								});
 							} else {
 								reject(res.statusCode + ' '+ res.statusMessage);
 							}
