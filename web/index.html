@@ -97,12 +97,18 @@ window.login = function() {
 };
 
 window.updateStage = function() {
-	let varsJSON;
+	let varsJSON, orderValue;
 
 	try {
 		varsJSON = JSON.parse(document.getElementById('varsInput').value);
 	} catch(ex) {
 		return renderError(ex);
+	}
+
+	orderValue = parseInt(document.getElementById('orderInput').value, 10);
+
+	if (typeof orderValue !== 'number') {
+		return renderError('Order must ba  number');
 	}
 
 	let params = {
@@ -113,9 +119,7 @@ window.updateStage = function() {
 			? 'UNBLOCKED' : 'BLOCKED',
 		vars: varsJSON,
 		executor: document.getElementById('executorInput').value,
-
-		// TODO:
-		order: 0
+		order: orderValue
 	};
 
 	if (
@@ -261,8 +265,7 @@ window.onUpdateStage = function(repo, pipeline, stage) {
 		return;
 	}
 
-	var
-		stageObj = _model.pipelineMap[pipeline].stageMap[stage];
+	var stageObj = _model.pipelineMap[pipeline].stageMap[stage];
 
 	_model.stageDraft = JSON.parse(JSON.stringify(stageObj));
 
@@ -300,6 +303,7 @@ window.showOverview = function() {
 					stage.repo = pipeline.repo;
 					stage.pipeline = pipeline.name;
 					stage.is4th = idx % 4 === 0;
+					stage.order = idx;
 
 					if (idx < pipeline.stages.length - 1) {
 						stage.isUnblocked = stage.state === 'UNBLOCKED';
@@ -382,6 +386,7 @@ window.showUpdateStage = function(ctx) {
 		: _model.stageDraft;
 
 	_model.stageDraft.EXECUTORS = EXECUTORS;
+	_model.stageDraft.order = _model.stageDraft.order || 0;
 	_model.stageDraft.selectedExecutor = function() {
 		return this.value == _model.stageDraft.executor ? 'selected' : ''
 	};
