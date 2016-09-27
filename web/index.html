@@ -119,7 +119,8 @@ window.updateStage = function() {
 			? 'UNBLOCKED' : 'BLOCKED',
 		vars: varsJSON,
 		executor: document.getElementById('executorInput').value,
-		order: orderValue
+		order: orderValue,
+		gitRef: '/refs/heads/' + document.getElementById('branchInput').value
 	};
 
 	if (
@@ -302,6 +303,8 @@ window.showOverview = function() {
 
 					stage.repo = pipeline.repo;
 					stage.pipeline = pipeline.name;
+					stage.gitRef = pipeline.gitRef;
+
 					stage.is4th = idx % 4 === 0;
 					stage.order = idx;
 
@@ -390,6 +393,13 @@ window.showUpdateStage = function(ctx) {
 	_model.stageDraft.selectedExecutor = function() {
 		return this.value == _model.stageDraft.executor ? 'selected' : ''
 	};
+
+	_model.stageDraft.branch = /refs\/heads\/(.+)/.exec(
+		_model.stageDraft.gitRef
+	);
+	_model.stageDraft.branch = _model.stageDraft.branch
+		&& _model.stageDraft.branch[1]
+		|| '';
 
 	getTemplate('update.html')
 		.then(function(template) {

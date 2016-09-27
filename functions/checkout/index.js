@@ -59,8 +59,12 @@ exports.handle = function(event, context, callback) {
 			).then((pipelineConfig) => new Promise((resolve, reject) => {
 				// check out source
 
+				if (gitEvent.ref !== pipeline.gitRef) {
+					return resolve(false);
+				}
+
 				if (downloadedRepos[gitEvent.repository.full_name]) {
-					return resolve();
+					return resolve(true);
 				}
 
 				console.log(
@@ -114,7 +118,7 @@ exports.handle = function(event, context, callback) {
 											});
 
 										uploader.on('error', reject);
-										uploader.on('end', resolve);
+										uploader.on('end', () => resolve(true));
 									});
 							} else {
 								reject(res.statusCode + ' '+ res.statusMessage);
@@ -125,7 +129,7 @@ exports.handle = function(event, context, callback) {
 
 				req.end();
 				req.on('error', (err) => reject);
-			})).then(() => snsUtil.publish( // send sns event
+			})).then((shouldRun) => shouldRun && snsUtil.publish( // send sns event
 				AWS,
 				{
 					TopicArn: process.env.SNS_TOPIC,
