@@ -73,6 +73,33 @@ gulp.task('copy-functions', function() {
 		.pipe(gulp.dest('build/functions'));
 });
 
+gulp.task('sizing-executors', function() {
+	gulp
+		.src('./build/functions/command-executor/**/*')
+		.pipe(gulp.dest('build/functions/command-executor-small'));
+
+	gulp
+		.src('./build/functions/command-executor/**/*')
+		.pipe(gulp.dest('build/functions/command-executor-medium'));
+
+	gulp
+		.src('./build/functions/command-executor/**/*')
+		.pipe(gulp.dest('build/functions/command-executor-large'));
+
+	gulp.src('./build/functions/command-executor').pipe(rm());
+
+	gulp
+		.src(
+			'./build/functions/command-executor-(small|medium|large)/function.json'
+		)
+		.pipe(transform(
+			(contents) => {
+				console.log(contents);
+			}
+		))
+		.pipe(gulp.dest('./build'));
+});
+
 gulp.task('transform-functions', function() {
 		return gulp
 			.src('./build/**/function.json')
@@ -190,6 +217,7 @@ gulp.task('default', function() {
 		'clean',
 		'prompt',
 		'copy-functions',
+		'sizing-executors',
 		'transform-project',
 		'transform-functions',
 		'install-deps', 'install-lib',

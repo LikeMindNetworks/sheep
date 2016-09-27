@@ -48,9 +48,10 @@
 </div>
 <br/>
 <div>
+	<label class="m-r-1" for="">Executor:</label>
 	<select id="executorInput">
 		{{#EXECUTORS}}
-		<option value="{{.}}" {{selectedExecutor}}>{{.}}</option>
+		<option value="{{value}}" {{selectedExecutor}}>{{label}}</option>
 		{{/EXECUTORS}}
 	</select>
 </div>

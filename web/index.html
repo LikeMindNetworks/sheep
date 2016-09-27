@@ -47,8 +47,9 @@
 var
 	_model = {},
 	EXECUTORS = [
-		'command-executor',
-		'npm-install-executor'
+		{ value: 'command-executor', label: 'small' },
+		{ value: 'command-executor', label: 'medium' },
+		{ value: 'command-executor', label: 'large' }
 	];
 
 window.loadCreds = function() {
@@ -382,7 +383,7 @@ window.showUpdateStage = function(ctx) {
 
 	_model.stageDraft.EXECUTORS = EXECUTORS;
 	_model.stageDraft.selectedExecutor = function() {
-		return this == _model.stageDraft.executor ? 'selected' : ''
+		return this.value == _model.stageDraft.executor ? 'selected' : ''
 	};
 
 	getTemplate('update.html')
