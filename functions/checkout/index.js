@@ -95,15 +95,20 @@ exports.handle = function(event, context, callback) {
 
 						res.pipe(fout);
 
+						fout.on('error', reject);
+
 						fout.on('finish', () => {
 							if (res.statusCode === 200) {
 								downloadedRepos[gitEvent.repository.full_name] = true;
 
-								fs
+								let unpack = fs
 									.createReadStream(foutPath)
 									.pipe(gunzip())
-									.pipe(tar.extract(cwd))
-									.on('finish', function() {
+									.pipe(tar.extract(cwd));
+
+								unpack.on('error', reject);
+
+								unpack.on('finish', function() {
 										// check for existence of un-tar-ed src
 										// TODO: this is uglu, just use git binary
 										// and deploy key in the future
@@ -126,7 +131,6 @@ exports.handle = function(event, context, callback) {
 											}),
 											uploader = s3cli.uploadDir({
 												localDir: path.join(cwd, dir),
-												deleteRemoved: true,
 
 												s3Params: {
 													Bucket: process.env.S3_ROOT,
@@ -135,6 +139,14 @@ exports.handle = function(event, context, callback) {
 											});
 
 										uploader.on('error', reject);
+										uploader.on('progress', () => {
+											console.log(
+												'progress',
+												uploader.progressMd5Amount,
+												uploader.progressAmount,
+												uploader.progressTotal
+											);
+										});
 										uploader.on('end', () => resolve(true));
 									});
 							} else {
@@ -145,7 +157,7 @@ exports.handle = function(event, context, callback) {
 				);
 
 				req.end();
-				req.on('error', (err) => reject);
+				req.on('error', reject);
 			})).then((shouldRun) => shouldRun && snsUtil.publish( // send sns event
 				AWS,
 				{
