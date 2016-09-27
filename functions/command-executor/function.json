@@ -1,7 +1,7 @@
 {
   "description": "command executor",
   "timeout": 300,
-  "memory": 512,
+  "memory": 1024,
   "role": "arn:aws:iam::293503197324:role/placeholder",
   "dependencies": [ "s3", "rimraf" ],
   "lib": [ "view", "utils", "executor" ]
