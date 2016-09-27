@@ -60,6 +60,24 @@
               "Principal": "*",
               "Action": "s3:GetObject",
               "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/index.html"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/style.css"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/utils.js"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/favicon.png"
             }
           ]
         }
