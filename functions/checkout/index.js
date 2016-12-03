@@ -65,6 +65,14 @@ exports.handle = function(event, context, callback) {
 					return resolve(true);
 				}
 
+				try {
+					if (fs.statSync(cwd).isDirectory()) {
+						// multiple pipelines on the same repo and branch
+						return resolve(true);
+					}
+				} catch(ex) {
+				}
+
 				console.log(
 					'Pulling GitHub: ' + gitEvent.repository.full_name
 						+ ' token: ' + pipelineConfig.repoAccessToken.substring(0, 4)
