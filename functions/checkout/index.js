@@ -47,9 +47,9 @@ exports.handle = function(event, context, callback) {
 				timestamp
 			);
 
-		return promiseUtil.map(pipelines.map((pipeline) => {
-
-			return getPipeline(
+		return promiseUtil.mapF(
+			pipelines,
+			(pipeline) => getPipeline(
 				AWS,
 				ctx,
 				pipeline
@@ -61,16 +61,9 @@ exports.handle = function(event, context, callback) {
 					return resolve(false);
 				}
 
+				// multiple pipelines on the same repo and branch
 				if (downloadedRepos[gitEvent.repository.full_name]) {
 					return resolve(true);
-				}
-
-				try {
-					if (fs.statSync(cwd).isDirectory()) {
-						// multiple pipelines on the same repo and branch
-						return resolve(true);
-					}
-				} catch(ex) {
 				}
 
 				console.log(
@@ -176,9 +169,10 @@ exports.handle = function(event, context, callback) {
 						s3Path: s3Path
 					})
 				}
-			));
+			)),
+			1
+		);
 
-		}));
 	})
 	.then((res) => callback(null, res))
 	.catch(callback);
