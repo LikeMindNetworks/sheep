@@ -17,13 +17,12 @@ const
 	getPipelinesForRepo = require('./lib/view/get-pipelines-for-repo'),
 	getPipeline = require('./lib/view/get-pipeline'),
 
-	ARTI_PATH_PREFEX = 'sheep-artifects-';
+	ARTI_PATH_PREFEX = 'sheep-artifects';
 
 exports.handle = function(event, context, callback) {
 
 	const
 		gitEvent = JSON.parse(event.Records[0].Sns.Message),
-		cwd = path.join(os.tmpdir(), ARTI_PATH_PREFEX + Date.now()),
 		downloadedRepos = {},
 		ctx = {
 			s3Root: process.env.S3_ROOT,
@@ -41,6 +40,14 @@ exports.handle = function(event, context, callback) {
 			timestamp = new Date(
 				gitEvent.head_commit.timestamp
 			).getTime() + '',
+			cwd = path.join(
+				os.tmpdir(),
+				[
+					ARTI_PATH_PREFEX,
+					timestamp,
+					gitEvent.after
+				].join('-')
+			),
 			s3Path = pathUtil.getSourcePath(
 				gitEvent.repository.full_name,
 				gitEvent.after,
