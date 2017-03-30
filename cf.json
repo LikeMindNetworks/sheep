@@ -53,31 +53,58 @@
               "Effect": "Allow",
               "Principal": "*",
               "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/templates/*"
-            },
-            {
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/index.html"
-            },
-            {
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/style.css"
-            },
-            {
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/utils.js"
-            },
-            {
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::sheepcd-s3root-lmncd/favicon.png"
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::sheepcd-s3root-",
+                      { "Ref": "AWS::StackName" },
+                      "/templates/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::sheepcd-s3root-",
+                      { "Ref": "AWS::StackName" },
+                      "/index.html"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::sheepcd-s3root-",
+                      { "Ref": "AWS::StackName" },
+                      "/style.css"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::sheepcd-s3root-",
+                      { "Ref": "AWS::StackName" },
+                      "/utils.js"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::sheepcd-s3root-",
+                      { "Ref": "AWS::StackName" },
+                      "/favicon.png"
+                    ]
+                  ]
+                }
+              ]
             }
           ]
         }
